@@ -1,0 +1,59 @@
+site_name: pykabu-calendar
+site_description: Japanese earnings calendar aggregator with official IR verification
+site_author: obichan117
+site_url: https://obichan117.github.io/pykabu-calendar
+
+repo_name: obichan117/pykabu-calendar
+repo_url: https://github.com/obichan117/pykabu-calendar
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+  - User Guide:
+      - Data Sources: guide/sources.md
+      - Official IR Verification: guide/official-ir.md
+      - Configuration: guide/configuration.md
+  - API Reference: api.md

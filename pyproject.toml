@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pykabu-calendar"
+version = "0.1.0"
+description = "Japanese earnings calendar aggregator with official IR verification"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "obichan117", email = "obichan117@gmail.com" }
+]
+keywords = ["japan", "stock", "earnings", "calendar", "scraping"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pykabutan>=0.1.0",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "pandas>=2.0.0",
+    "lxml>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+llm = [
+    "ollama>=0.1.0",
+]
+browser = [
+    "playwright>=1.40.0",
+]
+all = [
+    "pykabu-calendar[dev,llm,browser]",
+]
+
+[project.urls]
+Homepage = "https://github.com/obichan117/pykabu-calendar"
+Documentation = "https://obichan117.github.io/pykabu-calendar"
+Repository = "https://github.com/obichan117/pykabu-calendar"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pykabu_calendar"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
