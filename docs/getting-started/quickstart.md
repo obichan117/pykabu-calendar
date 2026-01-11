@@ -10,71 +10,87 @@ import pykabu_calendar as cal
 # Get calendar for February 10, 2026
 df = cal.get_calendar("2026-02-10")
 
-print(df[["code", "name", "datetime", "time_source"]])
+print(df[["code", "name", "datetime", "inferred_datetime"]])
 ```
 
 Output:
 
 ```
-   code             name            datetime time_source
-0  5076  インフロニア・ホールディングス 2026-02-10 10:00:00         sbi
-1  3405              クラレ 2026-02-10 11:00:00         sbi
-2  7183           あんしん保証 2026-02-10 11:00:00         sbi
+   code             name            datetime   inferred_datetime
+0  1414   ショーボンドホールディングス 2026-02-10 15:30:00 2026-02-10 15:30:00
+1  1446           キャンディル 2026-02-10 15:30:00 2026-02-10 15:30:00
+2  167A  リョーサン菱洋ホールディングス 2026-02-10 16:00:00 2026-02-10 16:00:00
 ...
 ```
 
-## Choosing Data Sources
+## Including SBI Data
+
+SBI Securities provides the most comprehensive calendar but requires browser automation:
 
 ```python
-# Use only lightweight sources (fastest, no browser needed)
-df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
+# Install Playwright first:
+# pip install playwright && playwright install chromium
 
-# Use all available sources including SBI (requires Playwright)
-df = cal.get_calendar("2026-02-10", sources=["sbi", "matsui", "tradersweb"])
+# Include SBI data
+df = cal.get_calendar("2026-02-10", include_sbi=True)
 
-# Disable historical inference (faster)
+# Check SBI-specific datetime
+print(df[["code", "name", "datetime", "sbi_datetime"]])
+```
+
+## Without Historical Inference
+
+For faster results, disable historical inference:
+
+```python
+# Faster, but less accurate
 df = cal.get_calendar("2026-02-10", infer_from_history=False)
 ```
 
-## With Historical Inference
+## Viewing Past Datetimes
 
-Historical inference uses past announcement patterns to predict time:
+Each row includes historical earnings announcement times:
 
 ```python
-# Enable historical inference (default)
-df = cal.get_calendar("2026-02-10", infer_from_history=True)
+df = cal.get_calendar("2026-02-10")
 
-# Check inference confidence
-print(df[["code", "name", "time", "time_source", "inference_confidence"]])
+# Check past earnings times for first company
+row = df.iloc[0]
+print(f"Company: {row['name']}")
+print(f"Past announcements: {row['past_datetimes']}")
 ```
 
-!!! tip
-    Inference works best for companies with consistent announcement patterns.
-    Confidence levels: `high` (always same time), `medium` (mostly same), `low` (varies).
+Output:
+
+```
+Company: ショーボンドホールディングス
+Past announcements: [Timestamp('2025-11-10 15:30:00'), Timestamp('2025-08-12 15:30:00'), ...]
+```
+
+## Candidate Datetimes
+
+The `candidate_datetimes` column shows all possible times, ordered by confidence:
+
+```python
+df = cal.get_calendar("2026-02-10")
+
+# When inferred matches source data, it's listed first (high confidence)
+print(df[["code", "name", "candidate_datetimes"]].head())
+```
 
 ## Export to CSV
 
 ```python
 df = cal.get_calendar("2026-02-10")
 
-# Use the built-in export function
+# Use the built-in export function (handles list columns)
 cal.export_to_csv(df, "earnings_2026-02-10.csv")
 
-# Or use pandas directly (with BOM for Excel/Google Sheets)
+# Or use pandas directly
 df.to_csv("earnings.csv", index=False, encoding="utf-8-sig")
 ```
 
 The `utf-8-sig` encoding ensures Excel and Google Sheets handle Japanese characters correctly.
-
-## Configuration
-
-```python
-# Configure settings
-cal.configure(
-    timeout=60,          # Request timeout in seconds
-    llm_model="llama3.2" # For future IR discovery
-)
-```
 
 ## Output Columns
 
@@ -83,12 +99,26 @@ cal.configure(
 | `code` | Stock code (e.g., "7203") |
 | `name` | Company name |
 | `datetime` | Best guess announcement datetime |
-| `date` | Announcement date |
-| `time` | Announcement time |
-| `time_source` | Source of time (sbi, matsui, inferred, etc.) |
-| `type` | Earnings type (3Q, 本決算, etc.) |
-| `time_sbi` | Time from SBI |
-| `time_matsui` | Time from Matsui |
-| `time_tradersweb` | Time from Tradersweb |
-| `time_inferred` | Time inferred from history |
-| `inference_confidence` | Inference confidence level |
+| `candidate_datetimes` | List of candidate datetimes (most likely first) |
+| `sbi_datetime` | Datetime from SBI |
+| `matsui_datetime` | Datetime from Matsui |
+| `tradersweb_datetime` | Datetime from Tradersweb |
+| `inferred_datetime` | Datetime inferred from history |
+| `past_datetimes` | List of past earnings datetimes |
+
+## Using Individual Scrapers
+
+You can also use individual scrapers directly:
+
+```python
+from pykabu_calendar import fetch_matsui, fetch_tradersweb, fetch_sbi
+
+# Matsui (lightweight)
+df_matsui = fetch_matsui("2026-02-10")
+
+# Tradersweb (lightweight)
+df_tradersweb = fetch_tradersweb("2026-02-10")
+
+# SBI (requires Playwright)
+df_sbi = fetch_sbi("2026-02-10")
+```

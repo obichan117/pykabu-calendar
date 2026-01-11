@@ -1,23 +1,35 @@
 """
-pykabu-calendar: Japanese earnings calendar aggregator.
+pykabu-calendar - Japanese earnings calendar aggregator.
 
-This library aggregates earnings announcement data from multiple
-Japanese broker sites and produces the most accurate earnings
-datetime calendar possible.
+Usage:
+    import pykabu_calendar as cal
+
+    # Get calendar for a specific date
+    df = cal.get_calendar("2026-02-10")
+
+    # With SBI (requires Playwright)
+    df = cal.get_calendar("2026-02-10", include_sbi=True)
+
+    # Export to CSV
+    cal.export_to_csv(df, "earnings.csv")
 """
 
-__version__ = "0.1.0"
+from .calendar import get_calendar, export_to_csv
+from .inference import get_past_earnings, infer_datetime, is_during_trading_hours
+from .scrapers import fetch_matsui, fetch_sbi, fetch_tradersweb
 
-from .calendar import EarningsCalendar, get_calendar
-from .config import configure, get_config
-from .utils import export_to_csv, format_for_google_sheets
+__version__ = "0.2.0"
 
 __all__ = [
-    "__version__",
-    "EarningsCalendar",
+    # Main API
     "get_calendar",
-    "configure",
-    "get_config",
     "export_to_csv",
-    "format_for_google_sheets",
+    # Inference
+    "get_past_earnings",
+    "infer_datetime",
+    "is_during_trading_hours",
+    # Individual scrapers
+    "fetch_matsui",
+    "fetch_sbi",
+    "fetch_tradersweb",
 ]
