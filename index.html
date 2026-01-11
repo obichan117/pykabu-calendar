@@ -461,6 +461,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#output-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Columns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -856,6 +867,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#output-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Columns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -898,7 +920,7 @@
 
 
 <h1 id="pykabu-calendar">pykabu-calendar</h1>
-<p>Japanese earnings calendar aggregator with official IR verification.</p>
+<p>Japanese earnings calendar aggregator.</p>
 <p><a href="https://colab.research.google.com/github/obichan117/pykabu-calendar/blob/main/examples/quickstart.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <h2 id="overview">Overview</h2>
 <p><strong>pykabu-calendar</strong> aggregates earnings announcement data from multiple Japanese broker sites and produces the most accurate earnings datetime calendar possible.</p>
@@ -911,10 +933,10 @@
 </ul>
 <h3 id="data-source-hierarchy">Data source hierarchy</h3>
 <ol>
-<li><strong>Official company IR</strong> - Most accurate, but slow to fetch</li>
-<li><strong>Historical patterns</strong> - Inferred from past announcement times</li>
-<li><strong>SBI Securities</strong> - Primary public calendar source</li>
-<li><strong>Supplementary sources</strong> - Matsui, Monex, Tradersweb</li>
+<li><strong>Inferred + Source match</strong> - When historical pattern matches a source (high confidence)</li>
+<li><strong>Historical patterns</strong> - Inferred from past announcement times via pykabutan</li>
+<li><strong>SBI Securities</strong> - Primary public source (requires Playwright)</li>
+<li><strong>Matsui/Tradersweb</strong> - Lightweight sources (default)</li>
 </ol>
 <h2 id="quick-example">Quick Example</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pykabu_calendar</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cal</span>
@@ -922,27 +944,76 @@
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Get earnings calendar for a specific date</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Using lightweight sources only (no browser needed)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;matsui&quot;</span><span class="p">,</span> <span class="s2">&quot;tradersweb&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Include SBI (requires Playwright)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">include_sbi</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># With historical inference (default: True)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">infer_from_history</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Without historical inference (faster)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">infer_from_history</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Export to CSV for Google Sheets</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">cal</span><span class="o">.</span><span class="n">export_to_csv</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;earnings.csv&quot;</span><span class="p">)</span>
 </code></pre></div>
+<h2 id="output-columns">Output Columns</h2>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td>Stock code (e.g., "7203")</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>Company name</td>
+</tr>
+<tr>
+<td><code>datetime</code></td>
+<td>Best estimate datetime</td>
+</tr>
+<tr>
+<td><code>candidate_datetimes</code></td>
+<td>List of candidate datetimes (most likely first)</td>
+</tr>
+<tr>
+<td><code>sbi_datetime</code></td>
+<td>Datetime from SBI (if available)</td>
+</tr>
+<tr>
+<td><code>matsui_datetime</code></td>
+<td>Datetime from Matsui</td>
+</tr>
+<tr>
+<td><code>tradersweb_datetime</code></td>
+<td>Datetime from Tradersweb</td>
+</tr>
+<tr>
+<td><code>inferred_datetime</code></td>
+<td>Datetime inferred from history</td>
+</tr>
+<tr>
+<td><code>past_datetimes</code></td>
+<td>List of past earnings datetimes</td>
+</tr>
+</tbody>
+</table>
 <h2 id="features">Features</h2>
 <ul>
-<li>Scrapes earnings calendars from SBI, Matsui, Monex, Tradersweb</li>
-<li>Merges data with intelligent conflict resolution</li>
-<li>Infers announcement time from historical patterns</li>
-<li>Optionally verifies against official company IR pages</li>
-<li>Caches IR discovery results for fast subsequent runs</li>
+<li>Aggregates earnings calendars from SBI, Matsui, Tradersweb</li>
+<li>Infers announcement time from historical patterns (via pykabutan)</li>
+<li>Centralized URL configuration for easy maintenance</li>
+<li>Modern User-Agent for reliable scraping</li>
 <li>Exports to CSV (Google Sheets compatible)</li>
 </ul>
 <h2 id="installation">Installation</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>pykabu-calendar
 </code></pre></div>
+<p>For SBI scraping:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>playwright<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>playwright<span class="w"> </span>install<span class="w"> </span>chromium
+</code></pre></div></p>
 <p>See <a href="getting-started/installation/">Installation</a> for more options.</p>
 
 

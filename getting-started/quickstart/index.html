@@ -536,10 +536,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#choosing-data-sources" class="md-nav__link">
+  <a href="#including-sbi-data" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Choosing Data Sources
+        Including SBI Data
       
     </span>
   </a>
@@ -547,10 +547,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#with-historical-inference" class="md-nav__link">
+  <a href="#without-historical-inference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        With Historical Inference
+        Without Historical Inference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-past-datetimes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing Past Datetimes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-datetimes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate Datetimes
       
     </span>
   </a>
@@ -569,10 +591,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#output-columns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Output Columns
       
     </span>
   </a>
@@ -580,10 +602,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#output-columns" class="md-nav__link">
+  <a href="#using-individual-scrapers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output Columns
+        Using Individual Scrapers
       
     </span>
   </a>
@@ -816,10 +838,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#choosing-data-sources" class="md-nav__link">
+  <a href="#including-sbi-data" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Choosing Data Sources
+        Including SBI Data
       
     </span>
   </a>
@@ -827,10 +849,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#with-historical-inference" class="md-nav__link">
+  <a href="#without-historical-inference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        With Historical Inference
+        Without Historical Inference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-past-datetimes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing Past Datetimes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-datetimes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate Datetimes
       
     </span>
   </a>
@@ -849,10 +893,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#output-columns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Output Columns
       
     </span>
   </a>
@@ -860,10 +904,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#output-columns" class="md-nav__link">
+  <a href="#using-individual-scrapers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output Columns
+        Using Individual Scrapers
       
     </span>
   </a>
@@ -898,55 +942,61 @@
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Get calendar for February 10, 2026</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;time_source&quot;</span><span class="p">]])</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;inferred_datetime&quot;</span><span class="p">]])</span>
 </code></pre></div>
 <p>Output:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>   code             name            datetime time_source
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>0  5076  インフロニア・ホールディングス 2026-02-10 10:00:00         sbi
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>1  3405              クラレ 2026-02-10 11:00:00         sbi
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>2  7183           あんしん保証 2026-02-10 11:00:00         sbi
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>   code             name            datetime   inferred_datetime
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>0  1414   ショーボンドホールディングス 2026-02-10 15:30:00 2026-02-10 15:30:00
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>1  1446           キャンディル 2026-02-10 15:30:00 2026-02-10 15:30:00
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>2  167A  リョーサン菱洋ホールディングス 2026-02-10 16:00:00 2026-02-10 16:00:00
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>...
 </code></pre></div>
-<h2 id="choosing-data-sources">Choosing Data Sources</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Use only lightweight sources (fastest, no browser needed)</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;matsui&quot;</span><span class="p">,</span> <span class="s2">&quot;tradersweb&quot;</span><span class="p">])</span>
+<h2 id="including-sbi-data">Including SBI Data</h2>
+<p>SBI Securities provides the most comprehensive calendar but requires browser automation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Install Playwright first:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># pip install playwright &amp;&amp; playwright install chromium</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Use all available sources including SBI (requires Playwright)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sbi&quot;</span><span class="p">,</span> <span class="s2">&quot;matsui&quot;</span><span class="p">,</span> <span class="s2">&quot;tradersweb&quot;</span><span class="p">])</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Include SBI data</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">include_sbi</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Disable historical inference (faster)</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">infer_from_history</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Check SBI-specific datetime</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;sbi_datetime&quot;</span><span class="p">]])</span>
 </code></pre></div>
-<h2 id="with-historical-inference">With Historical Inference</h2>
-<p>Historical inference uses past announcement patterns to predict time:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Enable historical inference (default)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">infer_from_history</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Check inference confidence</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;time_source&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_confidence&quot;</span><span class="p">]])</span>
+<h2 id="without-historical-inference">Without Historical Inference</h2>
+<p>For faster results, disable historical inference:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Faster, but less accurate</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">infer_from_history</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>Inference works best for companies with consistent announcement patterns.
-Confidence levels: <code>high</code> (always same time), <code>medium</code> (mostly same), <code>low</code> (varies).</p>
-</div>
-<h2 id="export-to-csv">Export to CSV</h2>
+<h2 id="viewing-past-datetimes">Viewing Past Datetimes</h2>
+<p>Each row includes historical earnings announcement times:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Use the built-in export function</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">cal</span><span class="o">.</span><span class="n">export_to_csv</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;earnings_2026-02-10.csv&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Or use pandas directly (with BOM for Excel/Google Sheets)</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;earnings.csv&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8-sig&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Check past earnings times for first company</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">row</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Company: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Past announcements: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;past_datetimes&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Company: ショーボンドホールディングス
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Past announcements: [Timestamp(&#39;2025-11-10 15:30:00&#39;), Timestamp(&#39;2025-08-12 15:30:00&#39;), ...]
+</code></pre></div>
+<h2 id="candidate-datetimes">Candidate Datetimes</h2>
+<p>The <code>candidate_datetimes</code> column shows all possible times, ordered by confidence:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># When inferred matches source data, it&#39;s listed first (high confidence)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;candidate_datetimes&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</code></pre></div>
+<h2 id="export-to-csv">Export to CSV</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Use the built-in export function (handles list columns)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">cal</span><span class="o">.</span><span class="n">export_to_csv</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;earnings_2026-02-10.csv&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># Or use pandas directly</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;earnings.csv&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8-sig&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p>The <code>utf-8-sig</code> encoding ensures Excel and Google Sheets handle Japanese characters correctly.</p>
-<h2 id="configuration">Configuration</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Configure settings</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">cal</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>          <span class="c1"># Request timeout in seconds</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;llama3.2&quot;</span> <span class="c1"># For future IR discovery</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">)</span>
-</code></pre></div>
 <h2 id="output-columns">Output Columns</h2>
 <table>
 <thead>
@@ -969,43 +1019,44 @@ Confidence levels: <code>high</code> (always same time), <code>medium</code> (mo
 <td>Best guess announcement datetime</td>
 </tr>
 <tr>
-<td><code>date</code></td>
-<td>Announcement date</td>
+<td><code>candidate_datetimes</code></td>
+<td>List of candidate datetimes (most likely first)</td>
 </tr>
 <tr>
-<td><code>time</code></td>
-<td>Announcement time</td>
+<td><code>sbi_datetime</code></td>
+<td>Datetime from SBI</td>
 </tr>
 <tr>
-<td><code>time_source</code></td>
-<td>Source of time (sbi, matsui, inferred, etc.)</td>
+<td><code>matsui_datetime</code></td>
+<td>Datetime from Matsui</td>
 </tr>
 <tr>
-<td><code>type</code></td>
-<td>Earnings type (3Q, 本決算, etc.)</td>
+<td><code>tradersweb_datetime</code></td>
+<td>Datetime from Tradersweb</td>
 </tr>
 <tr>
-<td><code>time_sbi</code></td>
-<td>Time from SBI</td>
+<td><code>inferred_datetime</code></td>
+<td>Datetime inferred from history</td>
 </tr>
 <tr>
-<td><code>time_matsui</code></td>
-<td>Time from Matsui</td>
-</tr>
-<tr>
-<td><code>time_tradersweb</code></td>
-<td>Time from Tradersweb</td>
-</tr>
-<tr>
-<td><code>time_inferred</code></td>
-<td>Time inferred from history</td>
-</tr>
-<tr>
-<td><code>inference_confidence</code></td>
-<td>Inference confidence level</td>
+<td><code>past_datetimes</code></td>
+<td>List of past earnings datetimes</td>
 </tr>
 </tbody>
 </table>
+<h2 id="using-individual-scrapers">Using Individual Scrapers</h2>
+<p>You can also use individual scrapers directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pykabu_calendar</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_matsui</span><span class="p">,</span> <span class="n">fetch_tradersweb</span><span class="p">,</span> <span class="n">fetch_sbi</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Matsui (lightweight)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">df_matsui</span> <span class="o">=</span> <span class="n">fetch_matsui</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># Tradersweb (lightweight)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">df_tradersweb</span> <span class="o">=</span> <span class="n">fetch_tradersweb</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># SBI (requires Playwright)</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">df_sbi</span> <span class="o">=</span> <span class="n">fetch_sbi</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+</code></pre></div>
 
 
 
