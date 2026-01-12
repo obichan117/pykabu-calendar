@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#official-ir-verification" class="md-skip">
+        <a href="#official-ir-verification-planned" class="md-skip">
           Skip to content
         </a>
       
@@ -642,10 +642,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
+  <a href="#planned-behavior" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How It Works
+        Planned Behavior
       
     </span>
   </a>
@@ -664,54 +664,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#caching" class="md-nav__link">
+  <a href="#current-alternative" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Caching
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#eager-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Eager Mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#manual-path-input" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Path Input
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#timeout-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Timeout Behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#llm-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LLM Configuration
+        Current Alternative
       
     </span>
   </a>
@@ -816,10 +772,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
+  <a href="#planned-behavior" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How It Works
+        Planned Behavior
       
     </span>
   </a>
@@ -838,54 +794,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#caching" class="md-nav__link">
+  <a href="#current-alternative" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Caching
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#eager-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Eager Mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#manual-path-input" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Path Input
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#timeout-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Timeout Behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#llm-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LLM Configuration
+        Current Alternative
       
     </span>
   </a>
@@ -912,11 +824,13 @@
   
 
 
-<h1 id="official-ir-verification">Official IR Verification</h1>
-<p>The most accurate earnings datetime comes from company investor relations (IR) pages. This feature attempts to discover and parse official announcement times.</p>
-<h2 id="how-it-works">How It Works</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2025-02-14&quot;</span><span class="p">,</span> <span class="n">verify_official</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</code></pre></div>
+<h1 id="official-ir-verification-planned">Official IR Verification (Planned)</h1>
+<div class="admonition warning">
+<p class="admonition-title">Not Yet Implemented</p>
+<p>This feature is planned for a future release. The documentation below describes the intended design.</p>
+</div>
+<p>The most accurate earnings datetime comes from company investor relations (IR) pages. This feature would attempt to discover and parse official announcement times.</p>
+<h2 id="planned-behavior">Planned Behavior</h2>
 <p>For each company in the calendar:</p>
 <ol>
 <li><strong>Check cache</strong> - Skip if we already know this company's IR URL and policy</li>
@@ -927,7 +841,7 @@
 <li><strong>Cache result</strong> - Save URL and <code>publishes_time</code> policy for future</li>
 </ol>
 <h2 id="trading-hours-optimization">Trading Hours Optimization</h2>
-<p>Only companies announcing during trading hours (zaraba) are checked:</p>
+<p>Only companies announcing during trading hours (zaraba) would be checked:</p>
 <table>
 <thead>
 <tr>
@@ -942,64 +856,21 @@
 </tr>
 <tr>
 <td>Afternoon</td>
-<td>12:30 - 15:30</td>
+<td>12:30 - 15:00</td>
 </tr>
 </tbody>
 </table>
-<p>If the scraped time is after 15:30, official verification is skipped since the exact time doesn't affect trading decisions.</p>
-<h2 id="caching">Caching</h2>
-<p>Discovered IR paths are cached for future use:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;7203&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;ir_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://global.toyota/jp/ir/calendar/&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&quot;publishes_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;last_checked&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-15&quot;</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">&quot;6758&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&quot;ir_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://www.sony.com/ja/SonyInfo/IR/&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">&quot;publishes_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">&quot;last_checked&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-15&quot;</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">}</span>
+<p>If the scraped time is after 15:30, official verification would be skipped since the exact time doesn't affect trading decisions.</p>
+<h2 id="current-alternative">Current Alternative</h2>
+<p>For now, use historical inference which provides reasonably accurate predictions based on past patterns:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pykabu_calendar</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cal</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Historical inference is enabled by default</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Check inferred datetime and past patterns</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;inferred_datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;past_datetimes&quot;</span><span class="p">]])</span>
 </code></pre></div>
-<ul>
-<li><code>publishes_time: true</code> - Company publishes exact time, check each season</li>
-<li><code>publishes_time: false</code> - Company only publishes date, skip time verification</li>
-</ul>
-<h2 id="eager-mode">Eager Mode</h2>
-<p>Occasionally refresh the cache to catch policy changes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Normal mode - respects cache</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2025-02-14&quot;</span><span class="p">,</span> <span class="n">verify_official</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Eager mode - ignores cache, re-checks everything</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2025-02-14&quot;</span><span class="p">,</span> <span class="n">verify_official</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">eager</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</code></pre></div>
-<p>Run eager mode quarterly or when you suspect policies have changed.</p>
-<h2 id="manual-path-input">Manual Path Input</h2>
-<p>Users can manually add IR URLs to the cache:</p>
-<ol>
-<li>Open <code>~/.pykabu_calendar/ir_cache.json</code></li>
-<li>Add entry for the company</li>
-<li>Next run will use the cached path</li>
-</ol>
-<p>This is useful when automatic discovery fails but you know the URL.</p>
-<h2 id="timeout-behavior">Timeout Behavior</h2>
-<ul>
-<li>Each company has a 30-second timeout</li>
-<li>If discovery fails, returns <code>None</code> and moves on</li>
-<li>Never blocks the entire calendar for one stubborn company</li>
-</ul>
-<h2 id="llm-configuration">LLM Configuration</h2>
-<p>When pattern matching fails, a local LLM helps discover IR pages:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">cal</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">llm_provider</span><span class="o">=</span><span class="s2">&quot;ollama&quot;</span><span class="p">,</span> <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;llama3.2&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p>The LLM:</p>
-<ol>
-<li>Analyzes the company homepage</li>
-<li>Looks for IR-related links</li>
-<li>Navigates to find earnings calendar</li>
-<li>Learns from accumulated successful patterns</li>
-</ol>
 
 
 

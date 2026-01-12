@@ -614,10 +614,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#source-hierarchy" class="md-nav__link">
+  <a href="#available-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Source Hierarchy
+        Available Sources
       
     </span>
   </a>
@@ -625,10 +625,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sbi-securities-primary" class="md-nav__link">
+  <a href="#sbi-securities" class="md-nav__link">
     <span class="md-ellipsis">
       
-        SBI Securities (Primary)
+        SBI Securities
       
     </span>
   </a>
@@ -640,17 +640,6 @@
     <span class="md-ellipsis">
       
         Matsui Securities
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monex-securities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Monex Securities
       
     </span>
   </a>
@@ -680,10 +669,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merging-strategy" class="md-nav__link">
+  <a href="#datetime-selection-priority" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Merging Strategy
+        Datetime Selection Priority
       
     </span>
   </a>
@@ -816,10 +805,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#source-hierarchy" class="md-nav__link">
+  <a href="#available-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Source Hierarchy
+        Available Sources
       
     </span>
   </a>
@@ -827,10 +816,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sbi-securities-primary" class="md-nav__link">
+  <a href="#sbi-securities" class="md-nav__link">
     <span class="md-ellipsis">
       
-        SBI Securities (Primary)
+        SBI Securities
       
     </span>
   </a>
@@ -842,17 +831,6 @@
     <span class="md-ellipsis">
       
         Matsui Securities
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monex-securities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Monex Securities
       
     </span>
   </a>
@@ -882,10 +860,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merging-strategy" class="md-nav__link">
+  <a href="#datetime-selection-priority" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Merging Strategy
+        Datetime Selection Priority
       
     </span>
   </a>
@@ -914,97 +892,81 @@
 
 <h1 id="data-sources">Data Sources</h1>
 <p>pykabu-calendar aggregates earnings calendar data from multiple sources, each with different characteristics.</p>
-<h2 id="source-hierarchy">Source Hierarchy</h2>
+<h2 id="available-sources">Available Sources</h2>
 <table>
 <thead>
 <tr>
-<th>Priority</th>
 <th>Source</th>
-<th>Description</th>
-<th>Reliability</th>
+<th>Browser Required</th>
+<th>Speed</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td>Official IR</td>
-<td>Company investor relations pages</td>
-<td>Highest</td>
+<td><code>matsui</code></td>
+<td>No</td>
+<td>Fast</td>
+<td>Lightweight, default</td>
 </tr>
 <tr>
-<td>2</td>
-<td>Historical</td>
-<td>Inferred from past patterns</td>
-<td>High</td>
+<td><code>tradersweb</code></td>
+<td>No</td>
+<td>Fast</td>
+<td>Lightweight, default</td>
 </tr>
 <tr>
-<td>3</td>
-<td>SBI</td>
-<td>SBI Securities calendar</td>
-<td>Good (primary)</td>
-</tr>
-<tr>
-<td>4</td>
-<td>Matsui</td>
-<td>Matsui Securities calendar</td>
-<td>Good</td>
-</tr>
-<tr>
-<td>5</td>
-<td>Monex</td>
-<td>Monex Securities calendar</td>
-<td>Moderate</td>
-</tr>
-<tr>
-<td>6</td>
-<td>Tradersweb</td>
-<td>Tradersweb calendar</td>
-<td>Good</td>
+<td><code>sbi</code></td>
+<td>Yes (Playwright)</td>
+<td>Slow</td>
+<td>Most comprehensive</td>
 </tr>
 </tbody>
 </table>
-<h2 id="sbi-securities-primary">SBI Securities (Primary)</h2>
+<h2 id="sbi-securities">SBI Securities</h2>
 <p>The SBI calendar is the most comprehensive public source for Japanese earnings dates.</p>
-<p><strong>URL Pattern</strong>: <code>https://www.sbisec.co.jp/...</code></p>
+<p><strong>URL</strong>: <code>https://www.sbisec.co.jp/...</code></p>
 <p><strong>Data provided</strong>:</p>
 <ul>
 <li>Announcement date and time</li>
 <li>Company code and name</li>
-<li>Earnings type (Q1, Q2, Q3, Full year)</li>
-<li>Result, guidance, and consensus estimates</li>
-<li>Percent gap (guidance vs consensus)</li>
 </ul>
-<p><strong>Limitations</strong>:</p>
-<ul>
-<li>Time may be inaccurate or missing for some companies</li>
-<li>Updates may lag behind official announcements</li>
-</ul>
+<p><strong>Requires</strong>: Playwright browser automation</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>playwright
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>playwright<span class="w"> </span>install<span class="w"> </span>chromium
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">include_sbi</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
 <h2 id="matsui-securities">Matsui Securities</h2>
-<p>Supplementary source that often confirms SBI data.</p>
+<p>Lightweight source that doesn't require browser automation.</p>
+<p><strong>URL</strong>: <code>https://finance.matsui.co.jp/...</code></p>
 <p><strong>Data provided</strong>:</p>
 <ul>
 <li>Announcement date and time</li>
 <li>Company code and name</li>
-<li>Earnings type</li>
 </ul>
-<h2 id="monex-securities">Monex Securities</h2>
-<p>Smaller coverage, often a subset of SBI.</p>
-<p><strong>Data provided</strong>:</p>
-<ul>
-<li>Announcement date and time</li>
-<li>Company code and name</li>
-<li>Earnings type</li>
-</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Used by default</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Or directly</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_matsui</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+</code></pre></div>
 <h2 id="tradersweb">Tradersweb</h2>
-<p>Independent source that can catch discrepancies.</p>
+<p>Independent source that can catch discrepancies with Matsui.</p>
+<p><strong>URL</strong>: <code>https://www.traders.co.jp/...</code></p>
 <p><strong>Data provided</strong>:</p>
 <ul>
 <li>Announcement date and time</li>
 <li>Company code and name</li>
-<li>Earnings type</li>
 </ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Used by default</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Or directly</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_tradersweb</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+</code></pre></div>
 <h2 id="historical-inference">Historical Inference</h2>
-<p>Uses past announcement patterns from pykabutan to predict timing.</p>
+<p>Uses past announcement patterns from <a href="https://pypi.org/project/pykabutan/">pykabutan</a> to predict timing.</p>
 <p><strong>Logic</strong>:</p>
 <ol>
 <li>Fetch past N earnings announcement times</li>
@@ -1017,14 +979,22 @@
 <li>Company varies between 11:00-15:00 → low confidence</li>
 <li>Company always announces after 15:30 → not significant for trading</li>
 </ul>
-<h2 id="merging-strategy">Merging Strategy</h2>
-<p>When sources disagree:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Enabled by default</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">infer_from_history</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># View past earnings times for a specific stock</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">past</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_past_earnings</span><span class="p">(</span><span class="s2">&quot;7203&quot;</span><span class="p">)</span>  <span class="c1"># Toyota</span>
+</code></pre></div>
+<h2 id="datetime-selection-priority">Datetime Selection Priority</h2>
+<p>When multiple sources provide different times:</p>
 <ol>
-<li>Official IR time (if verified) takes precedence</li>
-<li>Historical inference (if consistent pattern exists)</li>
-<li>First available: SBI → Matsui → Tradersweb</li>
+<li><strong>Inferred + Source match</strong> - When inferred time matches a source (high confidence)</li>
+<li><strong>Inferred</strong> - From historical patterns</li>
+<li><strong>SBI</strong> - Primary public source</li>
+<li><strong>Matsui</strong> - Lightweight source</li>
+<li><strong>Tradersweb</strong> - Lightweight source</li>
 </ol>
-<p>The <code>datetime_source</code> column indicates which source provided the final datetime.</p>
+<p>The <code>candidate_datetimes</code> column contains all possible times, ordered by confidence.</p>
 
 
 
