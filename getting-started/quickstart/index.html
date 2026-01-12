@@ -536,10 +536,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#including-sbi-data" class="md-nav__link">
+  <a href="#selecting-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Including SBI Data
+        Selecting Sources
       
     </span>
   </a>
@@ -838,10 +838,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#including-sbi-data" class="md-nav__link">
+  <a href="#selecting-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Including SBI Data
+        Selecting Sources
       
     </span>
   </a>
@@ -951,17 +951,18 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>2  167A  リョーサン菱洋ホールディングス 2026-02-10 16:00:00 2026-02-10 16:00:00
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>...
 </code></pre></div>
-<h2 id="including-sbi-data">Including SBI Data</h2>
-<p>SBI Securities provides the most comprehensive calendar but requires browser automation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Install Playwright first:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># pip install playwright &amp;&amp; playwright install chromium</span>
+<h2 id="selecting-sources">Selecting Sources</h2>
+<p>By default, all sources are used (SBI, Matsui, Tradersweb). For faster results without browser automation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Use only lightweight sources (no Playwright needed)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;matsui&quot;</span><span class="p">,</span> <span class="s2">&quot;tradersweb&quot;</span><span class="p">])</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Include SBI data</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">include_sbi</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Use only SBI (requires Playwright)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sbi&quot;</span><span class="p">])</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Check SBI-specific datetime</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">,</span> <span class="s2">&quot;sbi_datetime&quot;</span><span class="p">]])</span>
 </code></pre></div>
+<p>Note: SBI requires Playwright and may be slightly slower than other sources.</p>
 <h2 id="without-historical-inference">Without Historical Inference</h2>
 <p>For faster results, disable historical inference:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Faster, but less accurate</span>

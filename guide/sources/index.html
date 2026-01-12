@@ -904,6 +904,12 @@
 </thead>
 <tbody>
 <tr>
+<td><code>sbi</code></td>
+<td>Yes (Playwright)</td>
+<td>Slower</td>
+<td>Most comprehensive, default</td>
+</tr>
+<tr>
 <td><code>matsui</code></td>
 <td>No</td>
 <td>Fast</td>
@@ -914,12 +920,6 @@
 <td>No</td>
 <td>Fast</td>
 <td>Lightweight, default</td>
-</tr>
-<tr>
-<td><code>sbi</code></td>
-<td>Yes (Playwright)</td>
-<td>Slow</td>
-<td>Most comprehensive</td>
 </tr>
 </tbody>
 </table>
@@ -935,7 +935,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>playwright
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>playwright<span class="w"> </span>install<span class="w"> </span>chromium
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">include_sbi</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># SBI is included by default</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Or use SBI only</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">get_calendar</span><span class="p">(</span><span class="s2">&quot;2026-02-10&quot;</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sbi&quot;</span><span class="p">])</span>
 </code></pre></div>
 <h2 id="matsui-securities">Matsui Securities</h2>
 <p>Lightweight source that doesn't require browser automation.</p>
