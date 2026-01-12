@@ -1,100 +1,97 @@
 # Configuration
 
-## Basic Configuration
+## Shared Configuration
+
+The library uses centralized configuration in `pykabu_calendar/config.py`:
 
 ```python
-import pykabu_calendar as cal
-
-cal.configure(
-    llm_provider="ollama",
-    llm_model="llama3.2",
-    timeout=30,
-    parallel_workers=5,
+# User-Agent for HTTP requests
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/131.0.0.0 Safari/537.36"
 )
+
+# Request timeout in seconds
+TIMEOUT = 30
+
+# HTTP headers used for all requests
+HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
+}
 ```
 
-## Options
+## Source-Specific Configuration
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `llm_provider` | `"ollama"` | LLM provider for IR discovery |
-| `llm_model` | `"llama3.2"` | Model name |
-| `timeout` | `30` | Seconds per company for IR discovery |
-| `parallel_workers` | `5` | Concurrent IR verification workers |
-| `cache_path` | `~/.pykabu_calendar/` | Location for cache files |
+Each data source has its own configuration in `sources/{source}/config.py`:
 
-## LLM Providers
-
-### Ollama (Default)
-
-Free, local, private. Requires Ollama installed:
-
-```bash
-# Install
-brew install ollama
-
-# Pull model
-ollama pull llama3.2
-
-# Start server
-ollama serve
-```
+### Matsui
 
 ```python
-cal.configure(llm_provider="ollama", llm_model="llama3.2")
+# sources/matsui/config.py
+URL = "https://finance.matsui.co.jp/find-by-schedule/index"
+TABLE_SELECTOR = "table.m-table"
+DATE_FORMAT = "%Y/%m/%d"
+
+def build_url(date: str, page: int = 1) -> str:
+    # Builds URL like: .../index?d=2026/2/10&kind=earnings&p=1
 ```
 
-Available models:
-
-- `llama3.2` (3B) - Fast, good for simple tasks
-- `llama3.1` (8B) - Better reasoning
-- `mistral` (7B) - Good balance
-- `qwen2.5` (7B) - Strong for structured extraction
-
-### Future: Claude API
-
-Not yet implemented. Would require API key:
+### Tradersweb
 
 ```python
-cal.configure(
-    llm_provider="anthropic",
-    llm_model="claude-3-haiku",
-    api_key="sk-..."
-)
+# sources/tradersweb/config.py
+URL = "https://www.traders.co.jp/stocks/earnings/calendar"
+
+def build_url(date: str) -> str:
+    # Builds URL like: .../calendar/2026/02/10
 ```
 
-## Cache Location
-
-Default: `~/.pykabu_calendar/`
-
-Contents:
-
-- `ir_cache.json` - Discovered IR URLs and policies
-
-Override:
+### SBI
 
 ```python
-cal.configure(cache_path="/path/to/custom/cache/")
+# sources/sbi/config.py
+URL = "https://www.sbisec.co.jp/ETGate/..."
+
+def build_url(date: str) -> str:
+    # Builds URL for SBI calendar page
 ```
 
-## Environment Variables
+## Modifying URLs
 
-For future API key support:
+If a data source changes their URL structure:
 
-```bash
-export ANTHROPIC_API_KEY="sk-..."
-export OPENAI_API_KEY="sk-..."
-```
+1. Open `src/pykabu_calendar/sources/{source}/config.py`
+2. Update the `URL` constant and/or `build_url()` function
+3. Update any CSS selectors if the page structure changed
 
 ## Default Sources
 
 ```python
-# These are the defaults
-cal.get_calendar(
-    "2025-02-14",
-    sources=["sbi", "matsui", "tradersweb"],
-    infer_from_history=True,
-    verify_official=False,
-    eager=False,
-)
+import pykabu_calendar as cal
+
+# Default: uses matsui and tradersweb (lightweight, no browser needed)
+df = cal.get_calendar("2026-02-10")
+
+# Include SBI (requires Playwright browser)
+df = cal.get_calendar("2026-02-10", include_sbi=True)
+
+# Use specific sources only
+df = cal.get_calendar("2026-02-10", sources=["matsui"])
+
+# Disable historical inference (faster)
+df = cal.get_calendar("2026-02-10", infer_from_history=False)
 ```
+
+## Installing Playwright for SBI
+
+SBI requires browser automation because the site uses JavaScript rendering:
+
+```bash
+pip install playwright
+playwright install chromium
+```
+
+Then use `include_sbi=True` in `get_calendar()`.

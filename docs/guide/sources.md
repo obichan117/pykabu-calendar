@@ -2,69 +2,77 @@
 
 pykabu-calendar aggregates earnings calendar data from multiple sources, each with different characteristics.
 
-## Source Hierarchy
+## Available Sources
 
-| Priority | Source | Description | Reliability |
-|----------|--------|-------------|-------------|
-| 1 | Official IR | Company investor relations pages | Highest |
-| 2 | Historical | Inferred from past patterns | High |
-| 3 | SBI | SBI Securities calendar | Good (primary) |
-| 4 | Matsui | Matsui Securities calendar | Good |
-| 5 | Monex | Monex Securities calendar | Moderate |
-| 6 | Tradersweb | Tradersweb calendar | Good |
+| Source | Browser Required | Speed | Notes |
+|--------|-----------------|-------|-------|
+| `matsui` | No | Fast | Lightweight, default |
+| `tradersweb` | No | Fast | Lightweight, default |
+| `sbi` | Yes (Playwright) | Slow | Most comprehensive |
 
-## SBI Securities (Primary)
+## SBI Securities
 
 The SBI calendar is the most comprehensive public source for Japanese earnings dates.
 
-**URL Pattern**: `https://www.sbisec.co.jp/...`
+**URL**: `https://www.sbisec.co.jp/...`
 
 **Data provided**:
 
 - Announcement date and time
 - Company code and name
-- Earnings type (Q1, Q2, Q3, Full year)
-- Result, guidance, and consensus estimates
-- Percent gap (guidance vs consensus)
 
-**Limitations**:
+**Requires**: Playwright browser automation
 
-- Time may be inaccurate or missing for some companies
-- Updates may lag behind official announcements
+```bash
+pip install playwright
+playwright install chromium
+```
+
+```python
+df = cal.get_calendar("2026-02-10", include_sbi=True)
+```
 
 ## Matsui Securities
 
-Supplementary source that often confirms SBI data.
+Lightweight source that doesn't require browser automation.
+
+**URL**: `https://finance.matsui.co.jp/...`
 
 **Data provided**:
 
 - Announcement date and time
 - Company code and name
-- Earnings type
 
-## Monex Securities
+```python
+# Used by default
+df = cal.get_calendar("2026-02-10")
 
-Smaller coverage, often a subset of SBI.
-
-**Data provided**:
-
-- Announcement date and time
-- Company code and name
-- Earnings type
+# Or directly
+df = cal.get_matsui("2026-02-10")
+```
 
 ## Tradersweb
 
-Independent source that can catch discrepancies.
+Independent source that can catch discrepancies with Matsui.
+
+**URL**: `https://www.traders.co.jp/...`
 
 **Data provided**:
 
 - Announcement date and time
 - Company code and name
-- Earnings type
+
+```python
+# Used by default
+df = cal.get_calendar("2026-02-10")
+
+# Or directly
+df = cal.get_tradersweb("2026-02-10")
+```
 
 ## Historical Inference
 
-Uses past announcement patterns from pykabutan to predict timing.
+Uses past announcement patterns from [pykabutan](https://pypi.org/project/pykabutan/) to predict timing.
 
 **Logic**:
 
@@ -78,12 +86,22 @@ Uses past announcement patterns from pykabutan to predict timing.
 - Company varies between 11:00-15:00 → low confidence
 - Company always announces after 15:30 → not significant for trading
 
-## Merging Strategy
+```python
+# Enabled by default
+df = cal.get_calendar("2026-02-10", infer_from_history=True)
 
-When sources disagree:
+# View past earnings times for a specific stock
+past = cal.get_past_earnings("7203")  # Toyota
+```
 
-1. Official IR time (if verified) takes precedence
-2. Historical inference (if consistent pattern exists)
-3. First available: SBI → Matsui → Tradersweb
+## Datetime Selection Priority
 
-The `datetime_source` column indicates which source provided the final datetime.
+When multiple sources provide different times:
+
+1. **Inferred + Source match** - When inferred time matches a source (high confidence)
+2. **Inferred** - From historical patterns
+3. **SBI** - Primary public source
+4. **Matsui** - Lightweight source
+5. **Tradersweb** - Lightweight source
+
+The `candidate_datetimes` column contains all possible times, ordered by confidence.

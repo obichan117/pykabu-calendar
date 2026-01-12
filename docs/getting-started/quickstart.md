@@ -111,14 +111,14 @@ The `utf-8-sig` encoding ensures Excel and Google Sheets handle Japanese charact
 You can also use individual scrapers directly:
 
 ```python
-from pykabu_calendar import fetch_matsui, fetch_tradersweb, fetch_sbi
+import pykabu_calendar as cal
 
 # Matsui (lightweight)
-df_matsui = fetch_matsui("2026-02-10")
+df_matsui = cal.get_matsui("2026-02-10")
 
 # Tradersweb (lightweight)
-df_tradersweb = fetch_tradersweb("2026-02-10")
+df_tradersweb = cal.get_tradersweb("2026-02-10")
 
 # SBI (requires Playwright)
-df_sbi = fetch_sbi("2026-02-10")
+df_sbi = cal.get_sbi("2026-02-10")
 ```

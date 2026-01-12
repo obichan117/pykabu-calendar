@@ -6,67 +6,145 @@
 
 ```python
 def get_calendar(
-    target_date: str,
-    sources: list[str] = ["sbi", "matsui", "tradersweb"],
+    date: str,
+    sources: list[str] | None = None,
+    include_sbi: bool = False,
     infer_from_history: bool = True,
-    verify_official: bool = False,
-    eager: bool = False,
 ) -> pd.DataFrame:
     """
-    Get earnings calendar for a specific date.
+    Get aggregated earnings calendar for a target date.
 
     Args:
-        target_date: Date string in "YYYY-MM-DD" format
-        sources: List of calendar sources to scrape
+        date: Date in YYYY-MM-DD format
+        sources: List of sources to use. Default: ["matsui", "tradersweb"]
+        include_sbi: If True, include SBI (requires Playwright)
         infer_from_history: Whether to infer time from historical patterns
-        verify_official: Whether to check company IR pages
-        eager: If True, ignore cache and re-check all IR pages
 
     Returns:
         DataFrame with earnings calendar data
     """
 ```
 
-### get_calendars
+### export_to_csv
 
 ```python
-def get_calendars(
-    year_month: str,
-    start_day: int = 1,
-    **kwargs,
-) -> list[pd.DataFrame]:
+def export_to_csv(df: pd.DataFrame, path: str) -> None:
     """
-    Get earnings calendars for multiple days in a month.
+    Export calendar to CSV with proper encoding for Excel/Google Sheets.
 
     Args:
-        year_month: Year and month in "YYYY-MM" format
-        start_day: Day to start from (default: 1)
-        **kwargs: Passed to get_calendar()
-
-    Returns:
-        List of DataFrames, one per trading day
+        df: Calendar DataFrame
+        path: Output file path
     """
 ```
 
-### configure
+## Individual Scrapers
+
+### get_matsui
 
 ```python
-def configure(
-    llm_provider: str = "ollama",
-    llm_model: str = "llama3.2",
-    timeout: int = 30,
-    parallel_workers: int = 5,
-    cache_path: str = None,
-) -> None:
+def get_matsui(date: str) -> pd.DataFrame:
     """
-    Configure library settings.
+    Get earnings calendar from Matsui Securities.
 
     Args:
-        llm_provider: LLM provider ("ollama", "anthropic", "openai")
-        llm_model: Model name
-        timeout: Seconds per company for IR discovery
-        parallel_workers: Concurrent IR verification workers
-        cache_path: Custom cache directory path
+        date: Target date in YYYY-MM-DD format
+
+    Returns:
+        DataFrame with columns: [code, name, datetime]
+    """
+```
+
+### get_tradersweb
+
+```python
+def get_tradersweb(date: str) -> pd.DataFrame:
+    """
+    Get earnings calendar from Tradersweb.
+
+    Args:
+        date: Target date in YYYY-MM-DD format
+
+    Returns:
+        DataFrame with columns: [code, name, datetime]
+    """
+```
+
+### get_sbi
+
+```python
+def get_sbi(date: str) -> pd.DataFrame:
+    """
+    Get earnings calendar from SBI Securities.
+
+    Requires Playwright: pip install playwright && playwright install chromium
+
+    Args:
+        date: Target date in YYYY-MM-DD format
+
+    Returns:
+        DataFrame with columns: [code, name, datetime]
+    """
+```
+
+## Inference Functions
+
+### get_past_earnings
+
+```python
+def get_past_earnings(code: str, n_recent: int = 8) -> list[pd.Timestamp]:
+    """
+    Get past earnings announcement datetimes for a stock.
+
+    Uses pykabutan to fetch historical earnings data from kabutan.jp.
+
+    Args:
+        code: Stock code (e.g., "7203")
+        n_recent: Number of recent announcements to fetch
+
+    Returns:
+        List of past announcement timestamps
+    """
+```
+
+### infer_datetime
+
+```python
+def infer_datetime(
+    code: str,
+    target_date: str,
+    n_recent: int = 8,
+) -> tuple[pd.Timestamp | None, str, list[pd.Timestamp]]:
+    """
+    Infer earnings announcement datetime from historical patterns.
+
+    Args:
+        code: Stock code (e.g., "7203")
+        target_date: Target date in YYYY-MM-DD format
+        n_recent: Number of recent announcements to consider
+
+    Returns:
+        Tuple of (inferred_datetime, confidence, past_datetimes)
+        - inferred_datetime: Predicted announcement time (or None)
+        - confidence: "high", "medium", or "low"
+        - past_datetimes: List of past announcement times used
+    """
+```
+
+### is_during_trading_hours
+
+```python
+def is_during_trading_hours(dt: pd.Timestamp) -> bool:
+    """
+    Check if a datetime is during Tokyo Stock Exchange trading hours.
+
+    Trading hours: 9:00-11:30, 12:30-15:00 JST
+
+    Args:
+        dt: Datetime to check
+
+    Returns:
+        True if during trading hours
     """
 ```
 
@@ -76,61 +154,18 @@ def configure(
 |--------|------|-------------|
 | `code` | str | Stock code (e.g., "7203") |
 | `name` | str | Company name in Japanese |
-| `datetime` | datetime | Best guess announcement datetime |
-| `datetime_source` | str | Source of datetime ("sbi", "inferred", "official") |
-| `date` | date | Announcement date |
-| `time_sbi` | str | Time from SBI calendar |
-| `time_matsui` | str | Time from Matsui calendar |
-| `time_tradersweb` | str | Time from Tradersweb calendar |
-| `time_inferred` | str | Time inferred from history |
-| `time_official` | str | Time from company IR |
-| `type` | str | Earnings type (Q1, Q2, Q3, 本決算) |
-| `ir_url` | str | Cached IR page URL |
-| `publishes_time` | bool | Whether company publishes exact time |
-| `confidence` | str | Confidence level (high, medium, low) |
+| `datetime` | datetime | Best estimate announcement datetime |
+| `candidate_datetimes` | list | List of candidate datetimes (most likely first) |
+| `sbi_datetime` | datetime | Datetime from SBI (if available) |
+| `matsui_datetime` | datetime | Datetime from Matsui |
+| `tradersweb_datetime` | datetime | Datetime from Tradersweb |
+| `inferred_datetime` | datetime | Datetime inferred from history |
+| `past_datetimes` | list | List of past earnings datetimes |
 
-## Source Classes
+## Datetime Selection Priority
 
-### BaseCalendarScraper
-
-```python
-class BaseCalendarScraper(ABC):
-    """Abstract base class for calendar scrapers."""
-
-    @abstractmethod
-    def get_calendar(self, target_date: str) -> pd.DataFrame:
-        """Scrape calendar for target date."""
-        pass
-```
-
-### SbiCalendarScraper
-
-```python
-class SbiCalendarScraper(BaseCalendarScraper):
-    """SBI Securities earnings calendar scraper."""
-    pass
-```
-
-### MatsuiCalendarScraper
-
-```python
-class MatsuiCalendarScraper(BaseCalendarScraper):
-    """Matsui Securities earnings calendar scraper."""
-    pass
-```
-
-## Exceptions
-
-```python
-class CalendarScraperError(Exception):
-    """Base exception for scraper errors."""
-    pass
-
-class SourceUnavailableError(CalendarScraperError):
-    """Raised when a calendar source is unavailable."""
-    pass
-
-class IRDiscoveryError(CalendarScraperError):
-    """Raised when IR page discovery fails."""
-    pass
-```
+1. **Inferred + Source match** - When inferred time matches a source (high confidence)
+2. **Inferred** - From historical patterns
+3. **SBI** - Primary public source (requires Playwright)
+4. **Matsui** - Lightweight source
+5. **Tradersweb** - Lightweight source
