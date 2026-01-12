@@ -7,14 +7,11 @@ All tests use live data - no mocks.
 import pytest
 import pandas as pd
 
-from pykabu_calendar.scrapers import fetch_matsui, fetch_tradersweb, fetch_sbi
-from pykabu_calendar.scrapers.config import (
-    HEADERS,
-    USER_AGENT,
-    build_matsui_url,
-    build_tradersweb_url,
-    build_sbi_url,
-)
+from pykabu_calendar.sources import get_matsui, get_tradersweb, get_sbi
+from pykabu_calendar.config import HEADERS, USER_AGENT
+from pykabu_calendar.sources.matsui.config import build_url as build_matsui_url
+from pykabu_calendar.sources.tradersweb.config import build_url as build_tradersweb_url
+from pykabu_calendar.sources.sbi.config import build_url as build_sbi_url
 
 
 TEST_DATE = "2026-02-10"
@@ -57,19 +54,19 @@ class TestMatsui:
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = fetch_matsui(TEST_DATE)
+        df = get_matsui(TEST_DATE)
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = fetch_matsui(TEST_DATE)
+        df = get_matsui(TEST_DATE)
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
 
     def test_code_is_string(self):
         """Code should be string type."""
-        df = fetch_matsui(TEST_DATE)
+        df = get_matsui(TEST_DATE)
         if not df.empty:
             assert df["code"].dtype == object
 
@@ -79,12 +76,12 @@ class TestTradersweb:
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = fetch_tradersweb(TEST_DATE)
+        df = get_tradersweb(TEST_DATE)
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = fetch_tradersweb(TEST_DATE)
+        df = get_tradersweb(TEST_DATE)
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
@@ -96,12 +93,12 @@ class TestSbi:
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = fetch_sbi(TEST_DATE)
+        df = get_sbi(TEST_DATE)
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = fetch_sbi(TEST_DATE)
+        df = get_sbi(TEST_DATE)
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns

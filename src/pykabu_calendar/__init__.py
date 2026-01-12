@@ -16,9 +16,9 @@ Usage:
 
 from .calendar import get_calendar, export_to_csv
 from .inference import get_past_earnings, infer_datetime, is_during_trading_hours
-from .scrapers import fetch_matsui, fetch_sbi, fetch_tradersweb
+from .sources import get_matsui, get_sbi, get_tradersweb
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # Main API
@@ -29,7 +29,7 @@ __all__ = [
     "infer_datetime",
     "is_during_trading_hours",
     # Individual scrapers
-    "fetch_matsui",
-    "fetch_sbi",
-    "fetch_tradersweb",
+    "get_matsui",
+    "get_sbi",
+    "get_tradersweb",
 ]

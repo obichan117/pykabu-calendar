@@ -10,16 +10,16 @@ from typing import Optional
 
 import pandas as pd
 
-from .scrapers import fetch_matsui, fetch_sbi, fetch_tradersweb
+from .sources import get_matsui, get_sbi, get_tradersweb
 from .inference import get_past_earnings, infer_datetime
 
 logger = logging.getLogger(__name__)
 
 # Available scrapers
 SCRAPERS = {
-    "sbi": fetch_sbi,
-    "matsui": fetch_matsui,
-    "tradersweb": fetch_tradersweb,
+    "sbi": get_sbi,
+    "matsui": get_matsui,
+    "tradersweb": get_tradersweb,
 }
 
 DEFAULT_SOURCES = ["matsui", "tradersweb"]  # Lightweight by default
