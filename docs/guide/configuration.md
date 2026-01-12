@@ -72,11 +72,12 @@ If a data source changes their URL structure:
 ```python
 import pykabu_calendar as cal
 
-# Default: uses matsui and tradersweb (lightweight, no browser needed)
+# Default: uses all sources (sbi, matsui, tradersweb)
+# Note: SBI requires Playwright and may be slightly slower
 df = cal.get_calendar("2026-02-10")
 
-# Include SBI (requires Playwright browser)
-df = cal.get_calendar("2026-02-10", include_sbi=True)
+# Use only lightweight sources (no Playwright needed, faster)
+df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
 # Use specific sources only
 df = cal.get_calendar("2026-02-10", sources=["matsui"])
@@ -94,4 +95,4 @@ pip install playwright
 playwright install chromium
 ```
 
-Then use `include_sbi=True` in `get_calendar()`.
+SBI is included by default. To skip it, use `sources=["matsui", "tradersweb"]`.

@@ -23,20 +23,22 @@ Output:
 ...
 ```
 
-## Including SBI Data
+## Selecting Sources
 
-SBI Securities provides the most comprehensive calendar but requires browser automation:
+By default, all sources are used (SBI, Matsui, Tradersweb). For faster results without browser automation:
 
 ```python
-# Install Playwright first:
-# pip install playwright && playwright install chromium
+# Use only lightweight sources (no Playwright needed)
+df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
-# Include SBI data
-df = cal.get_calendar("2026-02-10", include_sbi=True)
+# Use only SBI (requires Playwright)
+df = cal.get_calendar("2026-02-10", sources=["sbi"])
 
 # Check SBI-specific datetime
 print(df[["code", "name", "datetime", "sbi_datetime"]])
 ```
+
+Note: SBI requires Playwright and may be slightly slower than other sources.
 
 ## Without Historical Inference
 

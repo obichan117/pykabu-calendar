@@ -22,13 +22,12 @@ SCRAPERS = {
     "tradersweb": get_tradersweb,
 }
 
-DEFAULT_SOURCES = ["matsui", "tradersweb"]  # Lightweight by default
+DEFAULT_SOURCES = ["sbi", "matsui", "tradersweb"]  # All sources by default
 
 
 def get_calendar(
     date: str,
     sources: Optional[list[str]] = None,
-    include_sbi: bool = False,
     infer_from_history: bool = True,
 ) -> pd.DataFrame:
     """
@@ -36,8 +35,8 @@ def get_calendar(
 
     Args:
         date: Date in YYYY-MM-DD format
-        sources: List of sources to use. Default: ["matsui", "tradersweb"]
-        include_sbi: If True, include SBI (requires Playwright)
+        sources: List of sources to use. Default: all sources (sbi, matsui, tradersweb).
+                 Note: SBI requires Playwright and may be slower than other sources.
         infer_from_history: Whether to infer time from historical patterns
 
     Returns:
@@ -54,8 +53,6 @@ def get_calendar(
     """
     if sources is None:
         sources = list(DEFAULT_SOURCES)
-        if include_sbi:
-            sources.insert(0, "sbi")
 
     logger.info(f"Getting calendar for {date} from sources: {sources}")
 
@@ -80,12 +77,8 @@ def get_calendar(
     # Merge all sources
     merged = _merge_sources(source_data)
 
-    # Add historical inference
-    if infer_from_history:
-        merged = _add_inference(merged, date)
-    else:
-        merged["inferred_datetime"] = pd.NaT
-        merged["past_datetimes"] = None
+    # Add historical data and inference
+    merged = _add_history(merged, date, infer=infer_from_history)
 
     # Build candidate list and select best datetime
     merged = _build_candidates(merged)
@@ -154,18 +147,25 @@ def _merge_sources(source_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return merged
 
 
-def _add_inference(df: pd.DataFrame, date: str) -> pd.DataFrame:
-    """Add inferred_datetime and past_datetimes columns."""
+def _add_history(df: pd.DataFrame, date: str, infer: bool = True) -> pd.DataFrame:
+    """Add past_datetimes and optionally inferred_datetime columns."""
     inferred = []
     past_list = []
 
     for code in df["code"]:
         try:
-            inferred_dt, confidence, past_dts = infer_datetime(str(code), date)
-            inferred.append(inferred_dt)
+            # Always get past earnings
+            past_dts = get_past_earnings(str(code))
             past_list.append(past_dts if past_dts else None)
+
+            # Only infer if requested
+            if infer:
+                inferred_dt, confidence, _ = infer_datetime(str(code), date)
+                inferred.append(inferred_dt)
+            else:
+                inferred.append(pd.NaT)
         except Exception as e:
-            logger.warning(f"Inference failed for {code}: {e}")
+            logger.warning(f"History lookup failed for {code}: {e}")
             inferred.append(pd.NaT)
             past_list.append(None)
 

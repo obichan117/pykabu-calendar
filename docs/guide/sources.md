@@ -6,9 +6,9 @@ pykabu-calendar aggregates earnings calendar data from multiple sources, each wi
 
 | Source | Browser Required | Speed | Notes |
 |--------|-----------------|-------|-------|
+| `sbi` | Yes (Playwright) | Slower | Most comprehensive, default |
 | `matsui` | No | Fast | Lightweight, default |
 | `tradersweb` | No | Fast | Lightweight, default |
-| `sbi` | Yes (Playwright) | Slow | Most comprehensive |
 
 ## SBI Securities
 
@@ -29,7 +29,11 @@ playwright install chromium
 ```
 
 ```python
-df = cal.get_calendar("2026-02-10", include_sbi=True)
+# SBI is included by default
+df = cal.get_calendar("2026-02-10")
+
+# Or use SBI only
+df = cal.get_calendar("2026-02-10", sources=["sbi"])
 ```
 
 ## Matsui Securities

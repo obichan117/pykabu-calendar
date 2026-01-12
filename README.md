@@ -21,11 +21,11 @@ pip install playwright && playwright install chromium
 ```python
 import pykabu_calendar as cal
 
-# Get earnings calendar for a specific date
+# Get earnings calendar (uses all sources by default)
 df = cal.get_calendar("2026-02-10")
 
-# Include SBI (requires Playwright)
-df = cal.get_calendar("2026-02-10", include_sbi=True)
+# Use specific sources only (faster, no browser needed)
+df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
 # Without historical inference (faster)
 df = cal.get_calendar("2026-02-10", infer_from_history=False)

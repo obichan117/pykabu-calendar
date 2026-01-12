@@ -8,7 +8,6 @@
 def get_calendar(
     date: str,
     sources: list[str] | None = None,
-    include_sbi: bool = False,
     infer_from_history: bool = True,
 ) -> pd.DataFrame:
     """
@@ -16,8 +15,8 @@ def get_calendar(
 
     Args:
         date: Date in YYYY-MM-DD format
-        sources: List of sources to use. Default: ["matsui", "tradersweb"]
-        include_sbi: If True, include SBI (requires Playwright)
+        sources: List of sources to use. Default: all sources (sbi, matsui, tradersweb).
+                 Note: SBI requires Playwright and may be slower than other sources.
         infer_from_history: Whether to infer time from historical patterns
 
     Returns:
