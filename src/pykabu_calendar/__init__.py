@@ -18,7 +18,7 @@ from .calendar import get_calendar, export_to_csv
 from .inference import get_past_earnings, infer_datetime, is_during_trading_hours
 from .sources import get_matsui, get_sbi, get_tradersweb
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 __all__ = [
     # Main API

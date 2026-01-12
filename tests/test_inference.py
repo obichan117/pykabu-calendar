@@ -2,6 +2,7 @@
 Tests for historical pattern inference.
 
 All tests use live data - no mocks.
+Uses dynamic dates to ensure tests work regardless of when they're run.
 """
 
 import pytest
@@ -12,6 +13,11 @@ from pykabu_calendar.inference import (
     infer_datetime,
     is_during_trading_hours,
 )
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+from conftest import get_test_date
 
 
 # Test fixtures - known stock codes
@@ -44,18 +50,18 @@ class TestInferDatetime:
 
     def test_returns_tuple(self):
         """Should return tuple of (datetime, confidence, past_datetimes)."""
-        result = infer_datetime("7203", "2026-02-10")
+        result = infer_datetime("7203", get_test_date())
         assert isinstance(result, tuple)
         assert len(result) == 3
 
     def test_confidence_values(self):
         """Confidence should be one of known values."""
-        _, confidence, _ = infer_datetime("7203", "2026-02-10")
+        _, confidence, _ = infer_datetime("7203", get_test_date())
         assert confidence in ["high", "medium", "low", "none"]
 
     def test_past_datetimes_is_list(self):
         """Third element should be a list."""
-        _, _, past_dts = infer_datetime("7203", "2026-02-10")
+        _, _, past_dts = infer_datetime("7203", get_test_date())
         assert isinstance(past_dts, list)
 
 
