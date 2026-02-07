@@ -21,12 +21,12 @@ class TestGetCalendar:
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have required columns."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
@@ -34,27 +34,44 @@ class TestGetCalendar:
 
     def test_has_source_datetime_columns(self):
         """Should have source-specific datetime columns."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         # Default sources are matsui and tradersweb
         assert "matsui_datetime" in df.columns
         assert "tradersweb_datetime" in df.columns
 
     def test_infer_from_history_adds_columns(self):
         """Should add inference columns when enabled."""
-        df = get_calendar(get_test_date(), infer_from_history=True)
+        df = get_calendar(get_test_date(), infer_from_history=True, include_ir=False)
         assert "inferred_datetime" in df.columns
         assert "past_datetimes" in df.columns
 
+    def test_include_ir_adds_column(self):
+        """Should add ir_datetime column when IR enabled."""
+        df = get_calendar(
+            get_test_date(),
+            sources=["matsui"],
+            infer_from_history=False,
+            include_ir=True,
+        )
+        assert "ir_datetime" in df.columns
+
+    def test_exclude_ir(self):
+        """Should not have ir_datetime when IR disabled."""
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
+        assert "ir_datetime" not in df.columns
+
     def test_specific_sources(self):
         """Should only use specified sources."""
-        df = get_calendar(get_test_date(), sources=["matsui"], infer_from_history=False)
+        df = get_calendar(
+            get_test_date(), sources=["matsui"], infer_from_history=False, include_ir=False
+        )
         assert "matsui_datetime" in df.columns
         # tradersweb should not be present when not requested
         assert "tradersweb_datetime" not in df.columns
 
     def test_candidate_datetimes_is_list(self):
         """candidate_datetimes should contain lists."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         if not df.empty:
             # Get first non-empty candidate list
             for val in df["candidate_datetimes"]:
@@ -64,7 +81,7 @@ class TestGetCalendar:
 
     def test_past_datetimes_is_list(self):
         """past_datetimes should contain lists when inference is enabled."""
-        df = get_calendar(get_test_date(), infer_from_history=True)
+        df = get_calendar(get_test_date(), infer_from_history=True, include_ir=False)
         if not df.empty:
             # Check that at least some rows have past_datetimes
             non_null = df["past_datetimes"].dropna()
@@ -74,7 +91,7 @@ class TestGetCalendar:
 
     def test_returns_non_empty(self):
         """Should return non-empty DataFrame for valid date."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         assert len(df) > 0, f"Expected earnings data for {get_test_date()}"
 
 
@@ -83,14 +100,14 @@ class TestExportToCsv:
 
     def test_export_creates_file(self, tmp_path):
         """Should create a CSV file."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         path = tmp_path / "test.csv"
         export_to_csv(df, str(path))
         assert path.exists()
 
     def test_export_is_readable(self, tmp_path):
         """Exported CSV should be readable."""
-        df = get_calendar(get_test_date(), infer_from_history=False)
+        df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         path = tmp_path / "test.csv"
         export_to_csv(df, str(path))
 

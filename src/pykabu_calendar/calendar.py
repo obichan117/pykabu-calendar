@@ -12,6 +12,8 @@ import pandas as pd
 
 from .sources import get_matsui, get_sbi, get_tradersweb
 from .inference import get_past_earnings, infer_datetime
+from .ir import discover_ir_page, parse_earnings_datetime, get_cached, save_cache
+from .llm import LLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +26,28 @@ SCRAPERS = {
 
 DEFAULT_SOURCES = ["sbi", "matsui", "tradersweb"]  # All sources by default
 
+# Column order for output
+OUTPUT_COLUMNS = [
+    "code",
+    "name",
+    "datetime",
+    "candidate_datetimes",
+    "ir_datetime",
+    "sbi_datetime",
+    "matsui_datetime",
+    "tradersweb_datetime",
+    "inferred_datetime",
+    "past_datetimes",
+]
+
 
 def get_calendar(
     date: str,
     sources: Optional[list[str]] = None,
     infer_from_history: bool = True,
+    include_ir: bool = True,
+    ir_eager: bool = False,
+    llm_client: LLMClient | None = None,
 ) -> pd.DataFrame:
     """
     Get aggregated earnings calendar for a target date.
@@ -38,6 +57,9 @@ def get_calendar(
         sources: List of sources to use. Default: all sources (sbi, matsui, tradersweb).
                  Note: SBI requires Playwright and may be slower than other sources.
         infer_from_history: Whether to infer time from historical patterns
+        include_ir: Whether to include IR discovery (default True)
+        ir_eager: Bypass IR cache and re-discover (default False)
+        llm_client: Optional LLM client for IR discovery/parsing
 
     Returns:
         DataFrame with columns:
@@ -45,6 +67,7 @@ def get_calendar(
         - name: Company name
         - datetime: Best estimate datetime
         - candidate_datetimes: List of candidate datetimes (most likely first)
+        - ir_datetime: Datetime from company IR page (if available)
         - sbi_datetime: Datetime from SBI (if available)
         - matsui_datetime: Datetime from Matsui (if available)
         - tradersweb_datetime: Datetime from Tradersweb (if available)
@@ -80,39 +103,20 @@ def get_calendar(
     # Add historical data and inference
     merged = _add_history(merged, date, infer=infer_from_history)
 
+    # Add IR discovery
+    if include_ir:
+        merged = _add_ir(merged, eager=ir_eager, llm_client=llm_client)
+
     # Build candidate list and select best datetime
     merged = _build_candidates(merged)
 
     # Reorder columns
-    cols = [
-        "code",
-        "name",
-        "datetime",
-        "candidate_datetimes",
-        "sbi_datetime",
-        "matsui_datetime",
-        "tradersweb_datetime",
-        "inferred_datetime",
-        "past_datetimes",
-    ]
-    return merged[[c for c in cols if c in merged.columns]]
+    return merged[[c for c in OUTPUT_COLUMNS if c in merged.columns]]
 
 
 def _empty_result() -> pd.DataFrame:
     """Return empty DataFrame with correct schema."""
-    return pd.DataFrame(
-        columns=[
-            "code",
-            "name",
-            "datetime",
-            "candidate_datetimes",
-            "sbi_datetime",
-            "matsui_datetime",
-            "tradersweb_datetime",
-            "inferred_datetime",
-            "past_datetimes",
-        ]
-    )
+    return pd.DataFrame(columns=OUTPUT_COLUMNS)
 
 
 def _merge_sources(source_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -175,16 +179,101 @@ def _add_history(df: pd.DataFrame, date: str, infer: bool = True) -> pd.DataFram
     return df
 
 
+def _add_ir(
+    df: pd.DataFrame,
+    eager: bool = False,
+    llm_client: LLMClient | None = None,
+) -> pd.DataFrame:
+    """Add ir_datetime column via IR page discovery and parsing.
+
+    Args:
+        df: Merged DataFrame with code column
+        eager: If True, bypass cache and re-discover
+        llm_client: Optional LLM client for discovery/parsing
+    """
+    ir_datetimes = []
+    ir_found = 0
+
+    for code in df["code"]:
+        code_str = str(code)
+        try:
+            ir_dt = _get_ir_datetime(code_str, eager=eager, llm_client=llm_client)
+            ir_datetimes.append(ir_dt)
+            if ir_dt is not pd.NaT:
+                ir_found += 1
+        except Exception as e:
+            logger.warning(f"[ir] Failed for {code_str}: {e}")
+            ir_datetimes.append(pd.NaT)
+
+    df["ir_datetime"] = ir_datetimes
+    logger.info(f"[ir] Found {ir_found}/{len(df)} IR datetimes")
+
+    return df
+
+
+def _get_ir_datetime(
+    code: str,
+    eager: bool = False,
+    llm_client: LLMClient | None = None,
+) -> pd.Timestamp:
+    """Get IR datetime for a single company.
+
+    Checks cache first, then discovers and parses IR page.
+    """
+    # Check cache first (unless eager mode)
+    if not eager:
+        cached = get_cached(code)
+        if cached and cached.last_earnings_datetime:
+            try:
+                return pd.Timestamp(cached.last_earnings_datetime)
+            except (ValueError, TypeError):
+                pass
+
+    # Discover IR page
+    page_info = discover_ir_page(code, llm_client=llm_client)
+    if not page_info:
+        return pd.NaT
+
+    # Parse earnings datetime from the IR page
+    earnings_info = parse_earnings_datetime(
+        page_info.url,
+        code=code,
+        llm_client=llm_client,
+    )
+    if not earnings_info or not earnings_info.datetime:
+        # Cache the page URL even without datetime (for future use)
+        save_cache(
+            code=code,
+            ir_url=page_info.url,
+            ir_type=page_info.page_type,
+            discovered_via=page_info.discovered_via,
+        )
+        return pd.NaT
+
+    # Cache successful result
+    save_cache(
+        code=code,
+        ir_url=page_info.url,
+        ir_type=page_info.page_type,
+        discovered_via=page_info.discovered_via,
+        last_earnings_datetime=earnings_info.datetime,
+    )
+
+    return pd.Timestamp(earnings_info.datetime)
+
+
 def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
     """
     Build candidate_datetimes list and select best datetime.
 
     Priority:
-    1. If inferred matches any source -> high confidence, use that
-    2. If sources agree -> use that
-    3. Otherwise -> use inferred > sbi > matsui > tradersweb
+    1. ir_datetime (company IR page - most accurate)
+    2. If inferred matches any source -> high confidence, use that
+    3. If sources agree -> use that
+    4. Otherwise -> inferred > sbi > matsui > tradersweb
     """
     datetime_cols = [
+        "ir_datetime",
         "inferred_datetime",
         "sbi_datetime",
         "matsui_datetime",
@@ -205,9 +294,21 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
         if not values:
             return [], pd.NaT
 
+        # IR datetime is highest priority (official source)
+        ir_val = values.get("ir_datetime")
+        if ir_val:
+            candidates.append(ir_val)
+            for col in available_cols:
+                if col != "ir_datetime" and col in values and values[col] not in candidates:
+                    candidates.append(values[col])
+            return candidates, candidates[0]
+
         # Check if inferred matches any source (high confidence)
         inferred = values.get("inferred_datetime")
-        source_values = {k: v for k, v in values.items() if k != "inferred_datetime"}
+        source_values = {
+            k: v for k, v in values.items()
+            if k not in ("inferred_datetime", "ir_datetime")
+        }
 
         if inferred and source_values:
             # Compare times (ignore date differences)
@@ -217,14 +318,18 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
                 if inferred_time == val_time:
                     # Inferred matches source - high confidence
                     candidates.append(inferred)
-                    # Add other sources
                     for other_col, other_val in source_values.items():
                         if other_col != col and other_val not in candidates:
                             candidates.append(other_val)
                     return candidates, candidates[0] if candidates else pd.NaT
 
         # No match - use priority order
-        priority = ["inferred_datetime", "sbi_datetime", "matsui_datetime", "tradersweb_datetime"]
+        priority = [
+            "inferred_datetime",
+            "sbi_datetime",
+            "matsui_datetime",
+            "tradersweb_datetime",
+        ]
         for col in priority:
             if col in values:
                 candidates.append(values[col])

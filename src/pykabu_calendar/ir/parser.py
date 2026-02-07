@@ -9,8 +9,9 @@ from enum import Enum
 import requests
 from bs4 import BeautifulSoup
 
-from ..config import HEADERS, TIMEOUT
-from ..llm import GeminiClient, LLMClient
+from ..config import TIMEOUT
+from ..core.fetch import fetch
+from ..llm import LLMClient, get_default_client
 
 logger = logging.getLogger(__name__)
 
@@ -170,15 +171,7 @@ def _has_undetermined_marker(text: str) -> bool:
 def _fetch_html(url: str, timeout: int = TIMEOUT) -> str | None:
     """Fetch HTML from URL."""
     try:
-        response = requests.get(
-            url,
-            headers=HEADERS,
-            timeout=timeout,
-            allow_redirects=True,
-        )
-        response.raise_for_status()
-        response.encoding = response.apparent_encoding
-        return response.text
+        return fetch(url, timeout=timeout)
     except requests.RequestException as e:
         logger.debug(f"Failed to fetch {url}: {e}")
         return None
@@ -332,19 +325,18 @@ def parse_earnings_datetime(
     # LLM fallback
     if use_llm_fallback:
         if llm_client is None:
-            try:
-                llm_client = GeminiClient()
-            except ValueError:
-                logger.debug("No LLM client available, skipping LLM fallback")
-                return None
+            llm_client = get_default_client()
+
+        if llm_client is None:
+            return None
 
         logger.debug("Using LLM to extract earnings datetime")
 
         # Build context for LLM
-        context_text = "\n".join(contexts[:10]) if contexts else soup.get_text()[:10000]
         context_hint = f" for stock code {code}" if code else ""
+        llm_html = "\n".join(contexts[:10]) if contexts else soup.get_text()[:10000]
 
-        result_dt = llm_client.extract_datetime(html, context=context_hint)
+        result_dt = llm_client.extract_datetime(llm_html, context=context_hint)
         if result_dt:
             return EarningsInfo(
                 datetime=result_dt,

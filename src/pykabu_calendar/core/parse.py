@@ -6,7 +6,6 @@ It never imports requests/playwright - only takes raw input.
 """
 
 import logging
-import re
 from io import StringIO
 from typing import Optional
 

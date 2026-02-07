@@ -3,14 +3,15 @@
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 from pykabutan import Ticker
 
 from ..config import HEADERS, TIMEOUT
-from ..llm import GeminiClient, LLMClient
+from ..core.fetch import fetch
+from ..llm import LLMClient, get_default_client
 from .patterns import get_candidate_urls, extract_ir_keywords
 
 logger = logging.getLogger(__name__)
@@ -91,15 +92,7 @@ def _fetch_html(url: str, timeout: int = TIMEOUT) -> str | None:
         HTML content as string, or None if failed
     """
     try:
-        response = requests.get(
-            url,
-            headers=HEADERS,
-            timeout=timeout,
-            allow_redirects=True,
-        )
-        response.raise_for_status()
-        response.encoding = response.apparent_encoding
-        return response.text
+        return fetch(url, timeout=timeout)
     except requests.RequestException as e:
         logger.debug(f"Failed to fetch {url}: {e}")
         return None
@@ -259,11 +252,7 @@ def discover_ir_page(
         # Step 3: Use LLM as fallback
         if use_llm_fallback:
             if llm_client is None:
-                try:
-                    llm_client = GeminiClient()
-                except ValueError:
-                    logger.debug("No LLM client available, skipping LLM fallback")
-                    llm_client = None
+                llm_client = get_default_client()
 
             if llm_client:
                 logger.debug("Using LLM to find IR link")
