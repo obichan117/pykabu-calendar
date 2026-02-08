@@ -14,7 +14,7 @@ from pykabu_calendar.ir import (
     get_cached,
     save_cache,
 )
-from pykabu_calendar.ir.cache import DEFAULT_TTL_DAYS
+from pykabu_calendar.config import get_settings
 
 
 class TestCacheEntry:
@@ -67,7 +67,7 @@ class TestCacheEntry:
 
     def test_is_expired_when_expired(self):
         """Test is_expired when entry is old."""
-        old_date = datetime.now() - timedelta(days=DEFAULT_TTL_DAYS + 1)
+        old_date = datetime.now() - timedelta(days=get_settings().cache_ttl_days + 1)
         entry = CacheEntry(
             ir_url="https://example.com/ir/",
             ir_type="landing",
@@ -181,7 +181,7 @@ class TestIRCache:
         temp_cache.set("7203", "https://a.com/ir/", IRPageType.LANDING)
 
         # Add expired entry by manipulating the cache directly
-        old_date = datetime.now() - timedelta(days=DEFAULT_TTL_DAYS + 1)
+        old_date = datetime.now() - timedelta(days=get_settings().cache_ttl_days + 1)
         temp_cache._cache["6758"] = CacheEntry(
             ir_url="https://b.com/ir/",
             ir_type="landing",
@@ -248,7 +248,7 @@ class TestIRCache:
 
     def test_get_expired_with_ignore(self, temp_cache):
         """Test getting expired entry with ignore_expired flag."""
-        old_date = datetime.now() - timedelta(days=DEFAULT_TTL_DAYS + 1)
+        old_date = datetime.now() - timedelta(days=get_settings().cache_ttl_days + 1)
         temp_cache._cache["7203"] = CacheEntry(
             ir_url="https://example.com/ir/",
             ir_type="landing",

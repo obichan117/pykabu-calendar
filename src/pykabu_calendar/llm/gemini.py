@@ -8,12 +8,10 @@ from threading import Lock
 from google import genai
 from google.genai import types
 
+from ..config import get_settings
 from .base import LLMClient, LLMResponse
 
 logger = logging.getLogger(__name__)
-
-# Default model - free tier friendly
-DEFAULT_MODEL = "gemini-2.0-flash"
 
 # Rate limiting for free tier: 15 RPM
 RATE_LIMIT_RPM = 15
@@ -31,19 +29,20 @@ class GeminiClient(LLMClient):
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = DEFAULT_MODEL,
-        timeout: float = 60.0,
+        model: str | None = None,
+        timeout: float | None = None,
     ) -> None:
         """Initialize Gemini client.
 
         Args:
             api_key: Gemini API key. If None, uses GEMINI_API_KEY env var.
-            model: Model to use (default: gemini-2.0-flash).
-            timeout: Request timeout in seconds.
+            model: Model to use. If None, uses ``get_settings().llm_model``.
+            timeout: Request timeout in seconds. If None, uses ``get_settings().llm_timeout``.
         """
+        settings = get_settings()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.model = model
-        self.timeout = timeout
+        self.model = model if model is not None else settings.llm_model
+        self.timeout = timeout if timeout is not None else settings.llm_timeout
         self._client: genai.Client | None = None
 
         # Rate limiting

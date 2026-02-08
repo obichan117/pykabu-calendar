@@ -7,14 +7,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from ..config import get_settings, on_configure
 from .discovery import IRPageType
 
 logger = logging.getLogger(__name__)
 
-# Default cache location
-DEFAULT_CACHE_DIR = Path.home() / ".pykabu_calendar"
 DEFAULT_CACHE_FILE = "ir_cache.json"
-DEFAULT_TTL_DAYS = 30
 
 
 @dataclass
@@ -46,15 +44,17 @@ class CacheEntry:
         """Convert to dictionary for JSON serialization."""
         return asdict(self)
 
-    def is_expired(self, ttl_days: int = DEFAULT_TTL_DAYS) -> bool:
+    def is_expired(self, ttl_days: int | None = None) -> bool:
         """Check if this cache entry has expired.
 
         Args:
-            ttl_days: Time-to-live in days
+            ttl_days: Time-to-live in days (default: from settings)
 
         Returns:
             True if expired, False otherwise
         """
+        if ttl_days is None:
+            ttl_days = get_settings().cache_ttl_days
         try:
             updated = datetime.fromisoformat(self.last_updated)
             expiry = updated + timedelta(days=ttl_days)
@@ -74,18 +74,19 @@ class IRCache:
         self,
         cache_dir: Path | str | None = None,
         cache_file: str = DEFAULT_CACHE_FILE,
-        ttl_days: int = DEFAULT_TTL_DAYS,
+        ttl_days: int | None = None,
     ):
         """Initialize cache manager.
 
         Args:
-            cache_dir: Directory to store cache file (default: ~/.pykabu_calendar/)
+            cache_dir: Directory to store cache file (default: from settings)
             cache_file: Cache filename (default: ir_cache.json)
-            ttl_days: Cache entry TTL in days (default: 30)
+            ttl_days: Cache entry TTL in days (default: from settings)
         """
-        self.cache_dir = Path(cache_dir) if cache_dir else DEFAULT_CACHE_DIR
+        settings = get_settings()
+        self.cache_dir = Path(cache_dir) if cache_dir else Path(settings.cache_dir).expanduser()
         self.cache_file = cache_file
-        self.ttl_days = ttl_days
+        self.ttl_days = ttl_days if ttl_days is not None else settings.cache_ttl_days
         self._cache: dict[str, CacheEntry] = {}
         self._loaded = False
 
@@ -310,13 +311,13 @@ _global_cache: IRCache | None = None
 
 def get_cache(
     cache_dir: Path | str | None = None,
-    ttl_days: int = DEFAULT_TTL_DAYS,
+    ttl_days: int | None = None,
 ) -> IRCache:
     """Get the global cache instance.
 
     Args:
-        cache_dir: Optional custom cache directory
-        ttl_days: Cache TTL in days
+        cache_dir: Optional custom cache directory (default: from settings)
+        ttl_days: Cache TTL in days (default: from settings)
 
     Returns:
         IRCache instance
@@ -371,3 +372,12 @@ def save_cache(
         parse_pattern=parse_pattern,
         last_earnings_datetime=last_earnings_datetime,
     )
+
+
+def _reset_global_cache() -> None:
+    """Reset global cache so it picks up new settings on next access."""
+    global _global_cache
+    _global_cache = None
+
+
+on_configure(_reset_global_cache)

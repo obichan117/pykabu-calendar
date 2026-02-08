@@ -18,6 +18,7 @@ Usage:
 """
 
 from .calendar import get_calendar, export_to_csv
+from .config import configure, get_settings
 from .inference import get_past_earnings, infer_datetime, is_during_trading_hours
 from .sources import get_matsui, get_sbi, get_tradersweb
 from .ir import discover_ir_page, discover_ir_pages, parse_earnings_datetime
@@ -25,6 +26,9 @@ from .ir import discover_ir_page, discover_ir_pages, parse_earnings_datetime
 __version__ = "0.5.0"
 
 __all__ = [
+    # Configuration
+    "configure",
+    "get_settings",
     # Main API
     "get_calendar",
     "export_to_csv",
