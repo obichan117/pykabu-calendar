@@ -24,11 +24,11 @@ uv run mkdocs gh-deploy --force
 uv build && uv run twine upload dist/* -u __token__ -p $PYPI_TOKEN
 ```
 
-## Architecture (v0.5.0)
+## Architecture (v0.6.0)
 
 ```
 src/pykabu_calendar/
-├── config.py              # Shared: USER_AGENT, TIMEOUT, HEADERS
+├── config.py              # Settings dataclass, configure(), get_settings()
 ├── core/
 │   ├── fetch.py           # Generic fetch (requests, browser)
 │   └── parse.py           # Generic parse (tables, regex, datetime)
@@ -82,6 +82,7 @@ Cache successful patterns for reuse
 
 | File | Purpose |
 |------|---------|
+| `config.py` | `Settings` dataclass, `configure()`, `get_settings()`, backward-compat constants |
 | `calendar.py` | Main aggregator, merges sources, IR integration, candidate ranking |
 | `inference.py` | Uses pykabutan for historical earnings patterns |
 | `core/fetch.py` | `fetch()`, `fetch_browser()`, `fetch_browser_with_pagination()` |
@@ -92,6 +93,21 @@ Cache successful patterns for reuse
 | `ir/cache.py` | JSON cache at `~/.pykabu_calendar/ir_cache.json` |
 | `llm/base.py` | Abstract `LLMClient` + `get_default_client()` singleton |
 | `llm/gemini.py` | `GeminiClient` with rate limiting |
+
+## Configuration
+
+```python
+import pykabu_calendar as cal
+
+# Override settings at runtime
+cal.configure(llm_model="gemini-2.0-flash-lite", cache_ttl_days=7)
+
+# Inspect current settings
+cal.get_settings()
+
+# Reset to defaults
+cal.configure()
+```
 
 ## Output Schema
 
@@ -115,10 +131,6 @@ df = cal.get_calendar("2026-02-10", ir_eager=True)
 - Browser tests marked with `@pytest.mark.slow`
 - IR/LLM unit tests use mocks (fast, no network)
 - Calendar tests pass `include_ir=False` for speed
-
-## Remaining Tasks
-
-- `tasks/todo/TASK-016-configuration.md` - Configuration system (LLM provider settings, timeouts)
 
 ## Related Projects
 

@@ -23,7 +23,7 @@ from .inference import get_past_earnings, infer_datetime, is_during_trading_hour
 from .sources import get_matsui, get_sbi, get_tradersweb
 from .ir import discover_ir_page, discover_ir_pages, parse_earnings_datetime
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     # Configuration
