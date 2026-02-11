@@ -24,7 +24,6 @@ ALL_SOURCES = [
     TraderswebEarningsSource(),
 ]
 
-# Available scrapers (keyed by name for backward compatibility)
 SCRAPERS = {src.name: src for src in ALL_SOURCES}
 
 DEFAULT_SOURCES = ["sbi", "matsui", "tradersweb"]

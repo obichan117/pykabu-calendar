@@ -5,8 +5,12 @@ import os
 import time
 from threading import Lock
 
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    genai = None  # type: ignore[assignment]
+    types = None  # type: ignore[assignment]
 
 from ..config import get_settings
 from .base import LLMClient, LLMResponse
@@ -39,6 +43,12 @@ class GeminiClient(LLMClient):
             model: Model to use. If None, uses ``get_settings().llm_model``.
             timeout: Request timeout in seconds. If None, uses ``get_settings().llm_timeout``.
         """
+        if genai is None:
+            raise ImportError(
+                "google-genai is required for GeminiClient. "
+                "Install it with: pip install pykabu-calendar[llm]"
+            )
+
         settings = get_settings()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         self.model = model if model is not None else settings.llm_model

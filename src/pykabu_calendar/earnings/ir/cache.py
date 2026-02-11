@@ -240,64 +240,6 @@ class IRCache:
         self._save()
         return count
 
-    def clear_expired(self) -> int:
-        """Clear only expired cache entries.
-
-        Returns:
-            Number of entries cleared
-        """
-        self._load()
-
-        expired_codes = [
-            code
-            for code, entry in self._cache.items()
-            if entry.is_expired(self.ttl_days)
-        ]
-
-        for code in expired_codes:
-            del self._cache[code]
-
-        if expired_codes:
-            self._save()
-
-        return len(expired_codes)
-
-    def list_all(self) -> dict[str, CacheEntry]:
-        """List all cache entries.
-
-        Returns:
-            Dictionary of code -> CacheEntry
-        """
-        self._load()
-        return dict(self._cache)
-
-    def stats(self) -> dict[str, Any]:
-        """Get cache statistics.
-
-        Returns:
-            Dictionary with cache statistics
-        """
-        self._load()
-
-        total = len(self._cache)
-        expired = sum(
-            1 for entry in self._cache.values() if entry.is_expired(self.ttl_days)
-        )
-        by_type = {}
-        by_via = {}
-
-        for entry in self._cache.values():
-            by_type[entry.ir_type] = by_type.get(entry.ir_type, 0) + 1
-            by_via[entry.discovered_via] = by_via.get(entry.discovered_via, 0) + 1
-
-        return {
-            "total": total,
-            "expired": expired,
-            "valid": total - expired,
-            "by_type": by_type,
-            "by_discovery_method": by_via,
-            "cache_path": str(self.cache_path),
-        }
 
 
 # Global cache instance (lazy initialization)

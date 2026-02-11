@@ -262,83 +262,6 @@ def _parse_context_rule_based(context: str) -> EarningsInfo | None:
         )
 
 
-def parse_earnings_datetime(
-    url: str,
-    code: str | None = None,
-    llm_client: LLMClient | None = None,
-    use_llm_fallback: bool = True,
-    timeout: int | None = None,
-) -> EarningsInfo | None:
-    """Parse earnings announcement datetime from an IR page.
-
-    Args:
-        url: URL of the IR page
-        code: Optional stock code to help locate relevant info
-        llm_client: Optional LLM client for fallback parsing
-        use_llm_fallback: Whether to use LLM as fallback
-        timeout: Request timeout in seconds
-
-    Returns:
-        EarningsInfo if found, None otherwise
-    """
-    logger.info(f"Parsing earnings datetime from {url}")
-
-    # Fetch the page
-    html = fetch_safe(url, timeout=timeout)
-    if not html:
-        return None
-
-    soup = BeautifulSoup(html, "lxml")
-
-    # Find contexts that likely contain earnings info
-    contexts = _find_earnings_context(soup, code)
-    logger.debug(f"Found {len(contexts)} potential contexts")
-
-    # Try rule-based parsing on each context
-    best_result: EarningsInfo | None = None
-
-    for context in contexts:
-        result = _parse_context_rule_based(context)
-        if result:
-            # Prefer results with time over date-only
-            if result.has_time:
-                logger.info(f"Found earnings datetime via rule: {result}")
-                return result
-            elif best_result is None or not best_result.has_time:
-                best_result = result
-
-    if best_result:
-        logger.info(f"Found earnings date via rule: {best_result}")
-        return best_result
-
-    # LLM fallback
-    if use_llm_fallback:
-        if llm_client is None:
-            llm_client = get_default_client()
-
-        if llm_client is None:
-            return None
-
-        logger.debug("Using LLM to extract earnings datetime")
-
-        # Build context for LLM
-        context_hint = f" for stock code {code}" if code else ""
-        llm_html = "\n".join(contexts[:10]) if contexts else soup.get_text()[:10000]
-
-        result_dt = llm_client.extract_datetime(llm_html, context=context_hint)
-        if result_dt:
-            return EarningsInfo(
-                datetime=result_dt,
-                confidence=ParseConfidence.MEDIUM,
-                source="llm",
-                raw_text=None,
-                has_time=result_dt.hour != 0 or result_dt.minute != 0,
-            )
-
-    logger.info(f"Could not find earnings datetime in {url}")
-    return None
-
-
 def parse_earnings_from_html(
     html: str,
     code: str | None = None,
@@ -358,6 +281,7 @@ def parse_earnings_from_html(
     """
     soup = BeautifulSoup(html, "lxml")
     contexts = _find_earnings_context(soup, code)
+    logger.debug(f"Found {len(contexts)} potential contexts")
 
     best_result: EarningsInfo | None = None
 
@@ -365,16 +289,28 @@ def parse_earnings_from_html(
         result = _parse_context_rule_based(context)
         if result:
             if result.has_time:
+                logger.info(f"Found earnings datetime via rule: {result}")
                 return result
             elif best_result is None or not best_result.has_time:
                 best_result = result
 
     if best_result:
+        logger.info(f"Found earnings date via rule: {best_result}")
         return best_result
 
     # LLM fallback
-    if use_llm_fallback and llm_client:
-        result_dt = llm_client.extract_datetime(html, context=code)
+    if use_llm_fallback:
+        if llm_client is None:
+            llm_client = get_default_client()
+
+        if llm_client is None:
+            return None
+
+        logger.debug("Using LLM to extract earnings datetime")
+        context_hint = f" for stock code {code}" if code else ""
+        llm_html = "\n".join(contexts[:10]) if contexts else soup.get_text()[:10000]
+
+        result_dt = llm_client.extract_datetime(llm_html, context=context_hint)
         if result_dt:
             return EarningsInfo(
                 datetime=result_dt,
@@ -385,3 +321,39 @@ def parse_earnings_from_html(
             )
 
     return None
+
+
+def parse_earnings_datetime(
+    url: str,
+    code: str | None = None,
+    llm_client: LLMClient | None = None,
+    use_llm_fallback: bool = True,
+    timeout: int | None = None,
+) -> EarningsInfo | None:
+    """Parse earnings announcement datetime from an IR page.
+
+    Fetches the URL and delegates to parse_earnings_from_html().
+
+    Args:
+        url: URL of the IR page
+        code: Optional stock code to help locate relevant info
+        llm_client: Optional LLM client for fallback parsing
+        use_llm_fallback: Whether to use LLM as fallback
+        timeout: Request timeout in seconds
+
+    Returns:
+        EarningsInfo if found, None otherwise
+    """
+    logger.info(f"Parsing earnings datetime from {url}")
+
+    html = fetch_safe(url, timeout=timeout)
+    if not html:
+        logger.info(f"Could not fetch {url}")
+        return None
+
+    result = parse_earnings_from_html(
+        html, code=code, llm_client=llm_client, use_llm_fallback=use_llm_fallback
+    )
+    if not result:
+        logger.info(f"Could not find earnings datetime in {url}")
+    return result

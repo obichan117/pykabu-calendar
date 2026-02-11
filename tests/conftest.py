@@ -10,8 +10,6 @@ from datetime import datetime, timedelta
 
 from pykabu_calendar.earnings.sources import MatsuiEarningsSource
 
-_matsui = MatsuiEarningsSource()
-
 
 def pytest_configure(config):
     """Add custom markers."""
@@ -45,12 +43,13 @@ def find_date_with_earnings(max_days=30):
     Searches up to max_days ahead to find a date with >10 earnings.
     Falls back to 14 days from now if nothing found.
     """
+    matsui = MatsuiEarningsSource()
     today = datetime.now()
     for i in range(1, max_days + 1):
         target = today + timedelta(days=i)
         date_str = target.strftime("%Y-%m-%d")
         try:
-            df = _matsui.fetch(date_str)
+            df = matsui.fetch(date_str)
             if len(df) > 10:
                 return date_str
         except Exception:
