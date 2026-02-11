@@ -22,11 +22,11 @@ class TestCacheEntry:
         """Test creating a CacheEntry."""
         entry = CacheEntry(
             ir_url="https://example.com/ir/",
-            ir_type="landing",
+            ir_type=IRPageType.LANDING,
             last_updated="2025-01-15T10:00:00",
         )
         assert entry.ir_url == "https://example.com/ir/"
-        assert entry.ir_type == "landing"
+        assert entry.ir_type == IRPageType.LANDING
         assert entry.success_count == 1
 
     def test_from_dict(self):
@@ -47,7 +47,7 @@ class TestCacheEntry:
         """Test converting to dictionary."""
         entry = CacheEntry(
             ir_url="https://example.com/ir/",
-            ir_type="landing",
+            ir_type=IRPageType.LANDING,
             last_updated="2025-01-15T10:00:00",
         )
         data = entry.to_dict()
@@ -58,7 +58,7 @@ class TestCacheEntry:
         """Test is_expired when entry is fresh."""
         entry = CacheEntry(
             ir_url="https://example.com/ir/",
-            ir_type="landing",
+            ir_type=IRPageType.LANDING,
             last_updated=datetime.now().isoformat(),
         )
         assert not entry.is_expired()
@@ -68,7 +68,7 @@ class TestCacheEntry:
         old_date = datetime.now() - timedelta(days=get_settings().cache_ttl_days + 1)
         entry = CacheEntry(
             ir_url="https://example.com/ir/",
-            ir_type="landing",
+            ir_type=IRPageType.LANDING,
             last_updated=old_date.isoformat(),
         )
         assert entry.is_expired()
@@ -78,7 +78,7 @@ class TestCacheEntry:
         date = datetime.now() - timedelta(days=5)
         entry = CacheEntry(
             ir_url="https://example.com/ir/",
-            ir_type="landing",
+            ir_type=IRPageType.LANDING,
             last_updated=date.isoformat(),
         )
         assert not entry.is_expired(ttl_days=10)
@@ -113,7 +113,7 @@ class TestIRCache:
         result = temp_cache.get("7203")
         assert result is not None
         assert result.ir_url == "https://global.toyota/jp/ir/"
-        assert result.ir_type == "landing"
+        assert result.ir_type == IRPageType.LANDING
 
     def test_set_updates_existing(self, temp_cache):
         """Test that set updates existing entry."""
@@ -207,7 +207,7 @@ class TestIRCache:
         old_date = datetime.now() - timedelta(days=get_settings().cache_ttl_days + 1)
         temp_cache._cache["7203"] = CacheEntry(
             ir_url="https://example.com/ir/",
-            ir_type="landing",
+            ir_type=IRPageType.LANDING,
             last_updated=old_date.isoformat(),
         )
         temp_cache._loaded = True

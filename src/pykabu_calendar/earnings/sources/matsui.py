@@ -7,6 +7,7 @@ import logging
 import re
 
 import pandas as pd
+import requests
 from bs4 import BeautifulSoup
 
 from ...core.fetch import fetch
@@ -81,8 +82,8 @@ class MatsuiEarningsSource(EarningsSource):
 
             try:
                 html = fetch(url)
-            except Exception as e:
-                logger.error(f"Matsui request failed: {e}")
+            except requests.RequestException as e:
+                logger.warning(f"Matsui request failed: {e}")
                 break
 
             soup = BeautifulSoup(html, "lxml")

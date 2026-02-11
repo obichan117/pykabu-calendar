@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from urllib.parse import urljoin
 
+import requests
 from bs4 import BeautifulSoup
 from pykabutan import Ticker
 
@@ -69,7 +70,7 @@ def _check_url_exists(url: str, timeout: int | None = None) -> tuple[bool, str |
 
         return False, None
 
-    except Exception as e:
+    except requests.RequestException as e:
         logger.debug(f"URL check failed for {url}: {e}")
         return False, None
 
@@ -179,7 +180,8 @@ def discover_ir_page(
         profile = ticker.profile
         website = profile.website
         company_name = profile.name
-    except Exception as e:
+    except (ValueError, AttributeError, requests.RequestException) as e:
+        # pykabutan may raise various errors for invalid codes or network issues
         logger.warning(f"Failed to get company info for {code}: {e}")
         return None
 

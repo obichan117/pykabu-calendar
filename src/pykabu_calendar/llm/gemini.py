@@ -8,9 +8,13 @@ from threading import Lock
 try:
     from google import genai
     from google.genai import types
+    from google.genai.errors import APIError, ClientError, ServerError
 except ImportError:
     genai = None  # type: ignore[assignment]
     types = None  # type: ignore[assignment]
+    APIError = None  # type: ignore[assignment,misc]
+    ClientError = None  # type: ignore[assignment,misc]
+    ServerError = None  # type: ignore[assignment,misc]
 
 from ..config import get_settings
 from .base import LLMClient, LLMResponse
@@ -130,24 +134,22 @@ class GeminiClient(LLMClient):
                 output_tokens=output_tokens,
             )
 
-        except Exception as e:
-            error_msg = str(e).lower()
-
-            if "quota" in error_msg or "rate" in error_msg or "exhausted" in error_msg:
+        except ClientError as e:
+            if e.code == 429 or (e.status and "RESOURCE_EXHAUSTED" in e.status):
                 logger.warning(f"Rate limit exceeded: {e}")
                 raise RuntimeError(
                     "Gemini rate limit exceeded. Please wait and try again."
                 ) from e
-
-            if "permission" in error_msg or "api key" in error_msg or "401" in error_msg:
+            if e.code in (401, 403):
                 logger.error(f"Authentication failed: {e}")
                 raise ValueError(
                     "Invalid Gemini API key. Check GEMINI_API_KEY environment variable."
                 ) from e
-
-            if "invalid" in error_msg or "400" in error_msg:
-                logger.error(f"Invalid request: {e}")
-                raise RuntimeError(f"Invalid request to Gemini API: {e}") from e
-
+            logger.error(f"Gemini client error: {e}")
+            raise RuntimeError(f"Gemini API client error: {e}") from e
+        except ServerError as e:
+            logger.error(f"Gemini server error: {e}")
+            raise RuntimeError(f"Gemini API server error: {e}") from e
+        except APIError as e:
             logger.error(f"Gemini API error: {e}")
             raise RuntimeError(f"Gemini API error: {e}") from e

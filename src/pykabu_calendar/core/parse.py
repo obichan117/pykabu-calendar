@@ -44,8 +44,11 @@ def parse_table(
         dfs = pd.read_html(StringIO(html), **read_html_kwargs)
         if not dfs:
             return pd.DataFrame()
-        return dfs[index] if index < len(dfs) else dfs[0]
-    except Exception as e:
+        if index < len(dfs):
+            return dfs[index]
+        logger.warning(f"Table index {index} out of range (found {len(dfs)} tables), using first")
+        return dfs[0]
+    except (ValueError, ImportError, SyntaxError) as e:
         logger.warning(f"Failed to parse table: {e}")
         return pd.DataFrame()
 

@@ -11,6 +11,7 @@ Runtime configuration:
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -71,15 +72,19 @@ class Settings:
 
 # Module-level singleton
 _settings: Settings | None = None
+_settings_lock = threading.Lock()
 _on_configure_hooks: list[Callable[[], None]] = []
 
 
 def get_settings() -> Settings:
     """Get the current settings (creates defaults on first call)."""
     global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
+    if _settings is not None:
+        return _settings
+    with _settings_lock:
+        if _settings is None:
+            _settings = Settings()
+        return _settings
 
 
 def configure(**kwargs) -> Settings:
@@ -96,10 +101,11 @@ def configure(**kwargs) -> Settings:
         The new Settings instance.
     """
     global _settings
-    if not kwargs:
-        _settings = Settings()
-    else:
-        _settings = replace(get_settings(), **kwargs)
+    with _settings_lock:
+        if not kwargs:
+            _settings = Settings()
+        else:
+            _settings = replace(get_settings(), **kwargs)
     # Notify subscribers (LLM singleton, cache singleton, etc.)
     for hook in _on_configure_hooks:
         hook()

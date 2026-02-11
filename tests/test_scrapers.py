@@ -14,10 +14,7 @@ from pykabu_calendar.earnings.sources.matsui import build_url as build_matsui_ur
 from pykabu_calendar.earnings.sources.tradersweb import build_url as build_tradersweb_url
 from pykabu_calendar.earnings.sources.sbi import build_url as build_sbi_url
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(__file__))
-from conftest import get_test_date
+from tests.conftest import get_test_date
 
 
 class TestConfig:

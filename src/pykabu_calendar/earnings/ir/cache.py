@@ -21,7 +21,7 @@ class CacheEntry:
     """Cache entry for a company's IR page discovery."""
 
     ir_url: str
-    ir_type: str  # IRPageType value as string
+    ir_type: IRPageType
     last_updated: str  # ISO format datetime
     discovered_via: str = "pattern"  # "pattern", "llm", "homepage_link", "manual"
     parse_pattern: str | None = None  # Successful parsing pattern (if rule-based)
@@ -33,12 +33,19 @@ class CacheEntry:
         """Create CacheEntry from dictionary."""
         fields = {f.name for f in cls.__dataclass_fields__.values()}
         known = {k: v for k, v in data.items() if k in fields}
-        known.setdefault("ir_type", "unknown")
+        # Deserialize ir_type string to enum
+        ir_type_raw = known.pop("ir_type", "unknown")
+        try:
+            known["ir_type"] = IRPageType(ir_type_raw)
+        except ValueError:
+            known["ir_type"] = IRPageType.UNKNOWN
         return cls(**known)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return asdict(self)
+        d = asdict(self)
+        d["ir_type"] = self.ir_type.value
+        return d
 
     def is_expired(self, ttl_days: int | None = None) -> bool:
         """Check if this cache entry has expired.
@@ -180,8 +187,12 @@ class IRCache:
         """
         self._load()
 
-        # Convert IRPageType enum to string
-        type_str = ir_type.value if isinstance(ir_type, IRPageType) else str(ir_type)
+        # Normalize ir_type to enum
+        if isinstance(ir_type, str):
+            try:
+                ir_type = IRPageType(ir_type)
+            except ValueError:
+                ir_type = IRPageType.UNKNOWN
 
         # Update existing entry or create new one
         existing = self._cache.get(code)
@@ -198,7 +209,7 @@ class IRCache:
             # Create new entry
             entry = CacheEntry(
                 ir_url=ir_url,
-                ir_type=type_str,
+                ir_type=ir_type,
                 last_updated=datetime.now().isoformat(),
                 discovered_via=discovered_via,
                 parse_pattern=parse_pattern,

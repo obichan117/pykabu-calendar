@@ -8,6 +8,7 @@ from collections import Counter
 
 import pandas as pd
 import pykabutan as pk
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def get_past_earnings(code: str, n_recent: int = 8) -> list[pd.Timestamp]:
         datetimes = df["datetime"].head(n_recent).tolist()
         return [pd.Timestamp(dt) for dt in datetimes]
 
-    except Exception as e:
+    except (ValueError, AttributeError, requests.RequestException) as e:
         logger.warning(f"Failed to get past earnings for {code}: {e}")
         return []
 
@@ -77,7 +78,7 @@ def infer_datetime(
 
     try:
         inferred_dt = pd.Timestamp(f"{date} {most_common_time}")
-    except Exception:
+    except (ValueError, TypeError):
         inferred_dt = None
         confidence = "none"
 

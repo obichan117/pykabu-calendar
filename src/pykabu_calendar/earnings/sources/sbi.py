@@ -14,6 +14,7 @@ import logging
 import re
 
 import pandas as pd
+import requests
 
 from ...core.fetch import fetch
 from ..base import EarningsSource, load_config
@@ -117,6 +118,21 @@ def _build_dataframe(items: list[dict], date: str) -> pd.DataFrame:
 
 # --- EarningsSource implementation ---
 
+def _fetch_hash(date: str) -> str | None:
+    """Fetch SBI page and extract the hash parameter."""
+    page_url = build_url(date)
+    logger.debug(f"Fetching SBI page for hash: {page_url}")
+    page_html = fetch(page_url)
+    return extract_hash(page_html)
+
+
+def _fetch_jsonp(hash_value: str, date: str) -> str:
+    """Fetch JSONP API response using extracted hash."""
+    params = build_api_params(hash_value, date)
+    logger.debug(f"Calling SBI API with hash={hash_value[:8]}...")
+    return fetch(_config["api_endpoint"], params=params)
+
+
 class SBIEarningsSource(EarningsSource):
     """SBI Securities earnings source (JSONP API)."""
 
@@ -128,25 +144,25 @@ class SBIEarningsSource(EarningsSource):
 
     def _fetch(self, date: str) -> pd.DataFrame:
         try:
-            page_url = build_url(date)
-            logger.debug(f"Fetching SBI page for hash: {page_url}")
-            page_html = fetch(page_url)
-
-            hash_value = extract_hash(page_html)
+            # Step 1: Fetch page and extract hash
+            hash_value = _fetch_hash(date)
             if not hash_value:
-                logger.error("Could not extract hash from SBI page")
+                logger.warning("Could not extract hash from SBI page")
                 return _EMPTY_DF.copy()
 
-            params = build_api_params(hash_value, date)
-            logger.debug(f"Calling SBI API with hash={hash_value[:8]}...")
-            jsonp_text = fetch(_config["api_endpoint"], params=params)
+            # Step 2: Fetch JSONP API
+            jsonp_text = _fetch_jsonp(hash_value, date)
 
+            # Step 3: Parse response into DataFrame
             items = _parse_jsonp(jsonp_text)
             if not items:
                 return _EMPTY_DF.copy()
 
             return _build_dataframe(items, date)
 
-        except Exception as e:
-            logger.error(f"SBI scraping failed: {e}")
+        except requests.RequestException as e:
+            logger.warning(f"SBI network error: {e}")
+            return _EMPTY_DF.copy()
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"SBI parse error: {e}")
             return _EMPTY_DF.copy()

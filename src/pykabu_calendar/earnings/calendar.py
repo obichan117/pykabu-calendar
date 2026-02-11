@@ -9,7 +9,7 @@ import logging
 import pandas as pd
 
 from .sources import SBIEarningsSource, MatsuiEarningsSource, TraderswebEarningsSource
-from .inference import get_past_earnings, infer_datetime
+from .inference import get_past_earnings, infer_datetime, is_during_trading_hours
 from .ir import discover_ir_page, parse_earnings_datetime, get_cached, save_cache
 from ..config import get_settings
 from ..core.parallel import run_parallel
@@ -34,6 +34,7 @@ OUTPUT_COLUMNS = [
     "name",
     "datetime",
     "confidence",
+    "during_trading_hours",
     "candidate_datetimes",
     "ir_datetime",
     "sbi_datetime",
@@ -113,6 +114,9 @@ def get_calendar(
 
     # Build candidate list and select best datetime
     merged = _build_candidates(merged)
+
+    # Add trading hours flag
+    merged["during_trading_hours"] = merged["datetime"].apply(is_during_trading_hours)
 
     # Reorder columns
     return merged[[c for c in OUTPUT_COLUMNS if c in merged.columns]]

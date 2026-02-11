@@ -1,7 +1,6 @@
 """Tests for core/parse.py — HTML parsing and data transformation."""
 
 import pandas as pd
-import pytest
 
 from pykabu_calendar.core.parse import parse_table, extract_regex, to_datetime, combine_datetime
 

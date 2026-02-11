@@ -11,7 +11,7 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-_CODE_PATTERN = re.compile(r"^[0-9A-Za-z]{4}$")
+_CODE_PATTERN = re.compile(r"^\d{4}$")
 
 
 def _next_weekday() -> date:

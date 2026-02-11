@@ -6,6 +6,7 @@ Uses requests (no browser needed).
 import logging
 
 import pandas as pd
+import requests
 
 from ...core.fetch import fetch
 from ...core.parse import parse_table, extract_regex, to_datetime, combine_datetime
@@ -83,8 +84,8 @@ class TraderswebEarningsSource(EarningsSource):
 
         try:
             html = fetch(url)
-        except Exception as e:
-            logger.error(f"Tradersweb request failed: {e}")
+        except requests.RequestException as e:
+            logger.warning(f"Tradersweb request failed: {e}")
             return pd.DataFrame(columns=["code", "name", "datetime"])
 
         df = parse_table(html, _config["table_selector"])

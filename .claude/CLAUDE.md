@@ -130,12 +130,14 @@ cal.check_sources()
 
 ```python
 df = cal.get_calendar("2026-02-10")
-# Columns: code, name, datetime, confidence, candidate_datetimes,
-#          ir_datetime, sbi_datetime, matsui_datetime,
+# Columns: code, name, datetime, confidence, during_trading_hours,
+#          candidate_datetimes, ir_datetime, sbi_datetime, matsui_datetime,
 #          tradersweb_datetime, inferred_datetime, past_datetimes
 #
 # confidence: "highest" (IR), "high" (inferred+scraper agree or 2+ scrapers agree),
 #             "medium" (multiple sources, no agreement), "low" (single source)
+# during_trading_hours: bool — True if datetime falls within TSE trading hours
+#   (morning: 9:00-11:30, afternoon: 12:30-15:30)
 
 # Disable IR for speed
 df = cal.get_calendar("2026-02-10", include_ir=False)
@@ -156,7 +158,8 @@ cal.export_to_sqlite(df, "earnings.db")
 - SBI uses JSONP API (fast, no browser needed)
 - `@pytest.mark.slow` reserved for network-dependent integration tests
 - IR/LLM unit tests use mocks (fast, no network)
-- Calendar tests pass `include_ir=False` for speed
+- `test_calendar_unit.py` — fast unit tests for `_merge_sources`, `_build_candidates`, `check_sources`, confidence scoring
+- Calendar integration tests pass `include_ir=False` for speed
 - Parquet tests skip if `pyarrow` not installed
 
 ## Related Projects

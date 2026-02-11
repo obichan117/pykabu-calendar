@@ -225,7 +225,7 @@ class TestDiscoverIrPage:
     @patch("pykabu_calendar.earnings.ir.discovery.Ticker")
     def test_ticker_error(self, mock_ticker):
         """Test handling pykabutan error."""
-        mock_ticker.side_effect = Exception("API error")
+        mock_ticker.side_effect = ValueError("API error")
 
         result = discover_ir_page("9999", use_llm_fallback=False)
         assert result is None

@@ -77,7 +77,7 @@ Return only the URL (starting with http or /), or "NOT_FOUND" if not present."""
 
             return result if result.startswith(("http", "/")) else None
 
-        except Exception as e:
+        except (RuntimeError, ValueError) as e:
             logger.warning(f"LLM find_link failed: {e}")
             return None
 
@@ -131,6 +131,6 @@ Return only the datetime in ISO format (YYYY-MM-DDTHH:MM:SS), or "NOT_FOUND"."""
         except ValueError as e:
             logger.warning(f"Failed to parse datetime: {e}")
             return None
-        except Exception as e:
+        except RuntimeError as e:
             logger.warning(f"LLM extract_datetime failed: {e}")
             return None

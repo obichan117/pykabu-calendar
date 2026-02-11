@@ -9,10 +9,7 @@ import pytest
 
 from pykabu_calendar import get_calendar, export_to_csv
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(__file__))
-from conftest import get_test_date
+from tests.conftest import get_test_date
 
 
 @pytest.mark.slow
