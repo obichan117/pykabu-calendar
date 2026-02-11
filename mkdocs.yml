@@ -61,6 +61,7 @@ nav:
       - Official IR Verification: guide/official-ir.md
       - Configuration: guide/configuration.md
       - Adding Custom Sources: guide/custom-sources.md
+      - CLI: guide/cli.md
   - Architecture: architecture.md
   - API Reference: api.md
   - Developer:

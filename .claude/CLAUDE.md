@@ -24,7 +24,7 @@ uv run mkdocs gh-deploy --force
 uv build && uv run twine upload dist/* -u __token__ -p $PYPI_TOKEN
 ```
 
-## Architecture (v0.8.0)
+## Architecture (v0.9.0)
 
 ```
 src/pykabu_calendar/
