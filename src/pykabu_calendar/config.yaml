@@ -16,6 +16,11 @@ max_workers: 4
 llm_provider: gemini
 llm_model: gemini-2.0-flash
 llm_timeout: 60.0
+llm_temperature: 0.1
+llm_max_output_tokens: 1024
+llm_rate_limit_rpm: 15
+llm_find_link_max_chars: 50000
+llm_extract_datetime_max_chars: 30000
 
 # Cache
 cache_dir: ~/.pykabu_calendar

@@ -45,19 +45,18 @@ def parse_table(
         if not dfs:
             return pd.DataFrame()
         return dfs[index] if index < len(dfs) else dfs[0]
-    except ValueError as e:
+    except Exception as e:
         logger.warning(f"Failed to parse table: {e}")
         return pd.DataFrame()
 
 
-def extract_regex(series: pd.Series, pattern: str, group: int = 1) -> pd.Series:
+def extract_regex(series: pd.Series, pattern: str) -> pd.Series:
     """
     Extract regex pattern from Series.
 
     Args:
         series: Pandas Series of strings
         pattern: Regex pattern with capture group
-        group: Which capture group to extract (default: 1)
 
     Returns:
         Series with extracted values

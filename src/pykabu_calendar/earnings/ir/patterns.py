@@ -50,14 +50,6 @@ CALENDAR_PATH_PATTERNS = [
     "/ir/data/",
 ]
 
-# Known IR platform domains (some companies host IR on external platforms)
-KNOWN_IR_PLATFORMS = [
-    "irbank.net",
-    "ir-site.jp",
-    "pronexus.co.jp",
-    "eir-parts.net",
-]
-
 
 def normalize_base_url(url: str) -> str:
     """Normalize a company website URL to a base URL for pattern matching.

@@ -89,15 +89,15 @@ Cache successful patterns for reuse
 | File | Purpose |
 |------|---------|
 | `config.py` | `Settings` dataclass, `configure()`, `get_settings()`, `on_configure()` |
-| `config.yaml` | Default values for all settings (timeout, max_workers, LLM, cache) |
+| `config.yaml` | Default values for all settings (timeout, max_workers, LLM params, cache) |
 | `earnings/calendar.py` | Main aggregator, parallel fetching, IR integration, candidate ranking |
 | `earnings/base.py` | `EarningsSource` ABC, `load_config()`, validation, health check |
 | `earnings/inference.py` | Uses pykabutan for historical earnings patterns |
 | `earnings/sources/*.yaml` | URLs, selectors, health check config — update here when sites change |
 | `earnings/ir/discovery.py` | Find company IR pages (pattern → homepage → LLM) |
 | `earnings/ir/parser.py` | Parse earnings datetime from IR pages (rule-based → LLM) |
-| `earnings/ir/cache.py` | JSON cache at `~/.pykabu_calendar/ir_cache.json` |
-| `core/fetch.py` | Thread-safe `get_session()`, `fetch()`, resets sessions on `configure()` |
+| `earnings/ir/cache.py` | Thread-safe JSON cache at `~/.pykabu_calendar/ir_cache.json` |
+| `core/fetch.py` | Thread-safe `get_session()` (version-based reset), `fetch()`, `fetch_safe()` |
 | `core/parallel.py` | `run_parallel()` — ThreadPoolExecutor wrapper |
 | `core/io.py` | `export_to_csv()`, `export_to_parquet()`, `export_to_sqlite()`, `load_from_sqlite()` |
 | `core/parse.py` | `parse_table()`, `extract_regex()`, `to_datetime()`, `combine_datetime()` |
@@ -130,9 +130,12 @@ cal.check_sources()
 
 ```python
 df = cal.get_calendar("2026-02-10")
-# Columns: code, name, datetime, candidate_datetimes,
+# Columns: code, name, datetime, confidence, candidate_datetimes,
 #          ir_datetime, sbi_datetime, matsui_datetime,
 #          tradersweb_datetime, inferred_datetime, past_datetimes
+#
+# confidence: "highest" (IR), "high" (inferred+scraper agree or 2+ scrapers agree),
+#             "medium" (multiple sources, no agreement), "low" (single source)
 
 # Disable IR for speed
 df = cal.get_calendar("2026-02-10", include_ir=False)
@@ -148,7 +151,7 @@ cal.export_to_sqlite(df, "earnings.db")
 
 ## Testing Notes
 
-- Tests use **dynamic dates** (finds future date with earnings)
+- Tests use **dynamic dates** (finds future weekday with earnings, skips weekends)
 - Tradersweb blocks cloud IPs (Colab) - handled gracefully
 - SBI uses JSONP API (fast, no browser needed)
 - `@pytest.mark.slow` reserved for network-dependent integration tests

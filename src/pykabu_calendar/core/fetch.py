@@ -15,11 +15,13 @@ from ..config import get_settings, on_configure
 logger = logging.getLogger(__name__)
 
 _thread_local = threading.local()
+_session_version = 0
 
 
 def _reset_sessions() -> None:
-    """Clear thread-local sessions so new settings take effect."""
-    _thread_local.__dict__.clear()
+    """Bump version so all threads create fresh sessions on next access."""
+    global _session_version
+    _session_version += 1
 
 
 on_configure(_reset_sessions)
@@ -27,12 +29,13 @@ on_configure(_reset_sessions)
 
 def get_session() -> requests.Session:
     """Get a configured requests session (one per thread)."""
-    session = getattr(_thread_local, "session", None)
-    if session is None:
+    local_ver = getattr(_thread_local, "version", -1)
+    if local_ver != _session_version:
         session = requests.Session()
         session.headers.update(get_settings().headers)
         _thread_local.session = session
-    return session
+        _thread_local.version = _session_version
+    return _thread_local.session
 
 
 def fetch(url: str, timeout: int | None = None, **kwargs) -> str:

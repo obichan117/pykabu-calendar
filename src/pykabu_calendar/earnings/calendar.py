@@ -33,6 +33,7 @@ OUTPUT_COLUMNS = [
     "code",
     "name",
     "datetime",
+    "confidence",
     "candidate_datetimes",
     "ir_datetime",
     "sbi_datetime",
@@ -165,7 +166,7 @@ def _add_history(df: pd.DataFrame, date: str, infer: bool = True) -> pd.DataFram
     def _fetch_history(code: str) -> tuple:
         past_dts = get_past_earnings(code)
         if infer:
-            inferred_dt, confidence, _ = infer_datetime(code, date)
+            inferred_dt, _, _ = infer_datetime(code, date, past_datetimes=past_dts)
         else:
             inferred_dt = pd.NaT
         return past_dts if past_dts else None, inferred_dt
@@ -283,8 +284,10 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
     ]
     available_cols = [c for c in datetime_cols if c in df.columns]
 
+    scraper_cols = [c for c in available_cols if c not in ("ir_datetime", "inferred_datetime")]
+
     def build_row_candidates(row):
-        """Build candidate list for a single row."""
+        """Build candidate list, select best datetime, and compute confidence."""
         candidates = []
         values = {}
 
@@ -294,50 +297,59 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
                 values[col] = val
 
         if not values:
-            return [], pd.NaT
+            return [], pd.NaT, "low"
+
+        ir_val = values.get("ir_datetime")
+        inferred = values.get("inferred_datetime")
+        scrapers = {k: v for k, v in values.items() if k in scraper_cols}
+
+        # --- Select best datetime and candidates ---
 
         # IR datetime is highest priority (official source)
-        ir_val = values.get("ir_datetime")
         if ir_val:
             candidates.append(ir_val)
             for col in available_cols:
                 if col != "ir_datetime" and col in values and values[col] not in candidates:
                     candidates.append(values[col])
-            return candidates, candidates[0]
+            return candidates, candidates[0], "highest"
 
-        # Check if inferred matches any source (high confidence)
-        inferred = values.get("inferred_datetime")
-        source_values = {
-            k: v for k, v in values.items()
-            if k not in ("inferred_datetime", "ir_datetime")
-        }
-
-        if inferred and source_values:
-            inferred_time = inferred.strftime("%H:%M") if pd.notna(inferred) else None
-            for col, val in source_values.items():
-                val_time = val.strftime("%H:%M") if pd.notna(val) else None
-                if inferred_time == val_time:
+        # Check if inferred matches any scraper (high confidence)
+        if inferred and scrapers:
+            inferred_time = inferred.strftime("%H:%M")
+            for col, val in scrapers.items():
+                if val.strftime("%H:%M") == inferred_time:
                     candidates.append(inferred)
-                    for other_col, other_val in source_values.items():
-                        if other_col != col and other_val not in candidates:
+                    for other_val in scrapers.values():
+                        if other_val not in candidates:
                             candidates.append(other_val)
-                    return candidates, candidates[0] if candidates else pd.NaT
+                    return candidates, candidates[0], "high"
 
-        # No match - use priority order
-        priority = [
-            "inferred_datetime",
-            "sbi_datetime",
-            "matsui_datetime",
-            "tradersweb_datetime",
-        ]
+        # Check if 2+ scrapers agree on time
+        if len(scrapers) >= 2:
+            scraper_times = {col: v.strftime("%H:%M") for col, v in scrapers.items()}
+            time_groups: dict[str, list] = {}
+            for col, t in scraper_times.items():
+                time_groups.setdefault(t, []).append(scrapers[col])
+            largest_group = max(time_groups.values(), key=len)
+            if len(largest_group) >= 2:
+                candidates.extend(largest_group)
+                for v in values.values():
+                    if v not in candidates:
+                        candidates.append(v)
+                return candidates, candidates[0], "high"
+
+        # No agreement — use priority order
+        priority = ["inferred_datetime", "sbi_datetime", "matsui_datetime", "tradersweb_datetime"]
         for col in priority:
             if col in values:
                 candidates.append(values[col])
 
-        return candidates, candidates[0] if candidates else pd.NaT
+        confidence = "medium" if len(scrapers) >= 2 else "low"
+        return candidates, candidates[0] if candidates else pd.NaT, confidence
 
     results = df.apply(build_row_candidates, axis=1)
     df["candidate_datetimes"] = results.apply(lambda x: x[0])
     df["datetime"] = results.apply(lambda x: x[1])
+    df["confidence"] = results.apply(lambda x: x[2])
 
     return df

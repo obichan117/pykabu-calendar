@@ -17,5 +17,4 @@ hash_pattern: 'hash=([a-f0-9]{40})'
 time_pattern: '(\d{1,2}:\d{2})'
 
 health_check:
-  test_date: "2026-02-10"
   min_rows: 10

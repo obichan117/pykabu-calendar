@@ -47,6 +47,11 @@ class Settings:
     llm_provider: str = _DEFAULTS["llm_provider"]
     llm_model: str = _DEFAULTS["llm_model"]
     llm_timeout: float = _DEFAULTS["llm_timeout"]
+    llm_temperature: float = _DEFAULTS["llm_temperature"]
+    llm_max_output_tokens: int = _DEFAULTS["llm_max_output_tokens"]
+    llm_rate_limit_rpm: int = _DEFAULTS["llm_rate_limit_rpm"]
+    llm_find_link_max_chars: int = _DEFAULTS["llm_find_link_max_chars"]
+    llm_extract_datetime_max_chars: int = _DEFAULTS["llm_extract_datetime_max_chars"]
 
     # Cache
     cache_dir: str = _DEFAULTS["cache_dir"]

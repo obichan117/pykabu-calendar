@@ -2,6 +2,7 @@
 
 import json
 import logging
+import threading
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -242,8 +243,9 @@ class IRCache:
 
 
 
-# Global cache instance (lazy initialization)
+# Global cache instance (lazy initialization, thread-safe)
 _global_cache: IRCache | None = None
+_global_cache_lock = threading.Lock()
 
 
 def get_cache(
@@ -261,8 +263,9 @@ def get_cache(
     """
     global _global_cache
 
-    if _global_cache is None or cache_dir is not None:
-        _global_cache = IRCache(cache_dir=cache_dir, ttl_days=ttl_days)
+    with _global_cache_lock:
+        if _global_cache is None or cache_dir is not None:
+            _global_cache = IRCache(cache_dir=cache_dir, ttl_days=ttl_days)
 
     return _global_cache
 
@@ -314,7 +317,8 @@ def save_cache(
 def _reset_global_cache() -> None:
     """Reset global cache so it picks up new settings on next access."""
     global _global_cache
-    _global_cache = None
+    with _global_cache_lock:
+        _global_cache = None
 
 
 on_configure(_reset_global_cache)

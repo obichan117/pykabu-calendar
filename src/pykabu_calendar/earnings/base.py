@@ -3,6 +3,7 @@
 import logging
 import re
 from abc import ABC, abstractmethod
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -11,6 +12,14 @@ import yaml
 logger = logging.getLogger(__name__)
 
 _CODE_PATTERN = re.compile(r"^[0-9A-Za-z]{4}$")
+
+
+def _next_weekday() -> date:
+    """Return the next weekday (Mon–Fri) from today."""
+    d = date.today() + timedelta(days=1)
+    while d.weekday() >= 5:  # 5=Sat, 6=Sun
+        d += timedelta(days=1)
+    return d
 
 
 def load_config(caller_file: str) -> dict:
@@ -100,7 +109,7 @@ class EarningsSource(ABC):
         try:
             cfg = getattr(self, "_config", {})
             hc = cfg.get("health_check", {})
-            test_date = hc.get("test_date", "2026-02-10")
+            test_date = hc.get("test_date") or _next_weekday().isoformat()
             min_rows = hc.get("min_rows", 1)
 
             df = self.fetch(test_date)

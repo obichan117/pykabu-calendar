@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 
+from ..config import get_settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +50,7 @@ class LLMClient(ABC):
             URL string if found, None otherwise
         """
         # Truncate HTML to avoid token limits
-        max_chars = 50000
+        max_chars = get_settings().llm_find_link_max_chars
         if len(html) > max_chars:
             html = html[:max_chars] + "\n... (truncated)"
 
@@ -92,7 +94,7 @@ Return only the URL (starting with http or /), or "NOT_FOUND" if not present."""
             Parsed datetime if found, None otherwise
         """
         # Truncate HTML to avoid token limits
-        max_chars = 30000
+        max_chars = get_settings().llm_extract_datetime_max_chars
         if len(html) > max_chars:
             html = html[:max_chars] + "\n... (truncated)"
 
