@@ -64,7 +64,7 @@ class GeminiClient(LLMClient):
         rpm = settings.llm_rate_limit_rpm
         self._min_request_interval = 60.0 / rpm if rpm > 0 else 0.0
 
-    def _get_client(self) -> genai.Client:
+    def _get_client(self) -> "genai.Client":
         """Get or create the Gemini client (thread-safe)."""
         if self._client is not None:
             return self._client
