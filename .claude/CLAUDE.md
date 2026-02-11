@@ -50,10 +50,7 @@ src/pykabu_calendar/
 ├── llm/                   # LLM-assisted parsing
 │   ├── base.py            # Abstract LLM interface + get_default_client()
 │   └── gemini.py          # Google Gemini free tier client
-├── calendar.py            # Backward-compat shim → earnings.calendar
-├── inference.py           # Backward-compat shim → earnings.inference
-├── sources/               # Backward-compat shim → earnings.sources
-└── ir/                    # Backward-compat shim → earnings.ir
+└── __init__.py            # Public API re-exports
 ```
 
 ## Data Source Priority

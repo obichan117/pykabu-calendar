@@ -99,9 +99,7 @@ def on_configure(hook: Callable[[], None]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Backward-compatible module-level constants
-# Existing code does ``from ..config import TIMEOUT, HEADERS``
-# These are kept as simple names that resolve on import.
+# Module-level constants used by core/fetch.py, earnings/ir/, and tests.
 # ---------------------------------------------------------------------------
 
 # Modern Chrome User-Agent (update periodically)
