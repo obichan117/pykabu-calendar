@@ -1,25 +1,32 @@
 """
 SBI Securities earnings calendar scraper.
 
-Requires Playwright (browser automation) because SBI uses JavaScript rendering.
+Uses SBI's JSONP API to fetch all earnings entries for a given date
+in a single request. No browser automation required.
+
+Flow:
+  1. Fetch SBI page HTML with requests → extract hash parameter
+  2. Call JSONP API with hash → get all entries (no pagination)
+  3. Parse JSONP response → DataFrame[code, name, datetime]
 """
 
+import json
 import logging
+import re
 
 import pandas as pd
 
-from ...core.fetch import fetch_browser_with_pagination
-from ...core.parse import parse_table, extract_regex, to_datetime, combine_datetime
+from ...core.fetch import fetch
 from . import config
 
 logger = logging.getLogger(__name__)
+
+_EMPTY_DF = pd.DataFrame(columns=["code", "name", "datetime"])
 
 
 def get_sbi(date: str) -> pd.DataFrame:
     """
     Get earnings calendar from SBI Securities.
-
-    Requires Playwright: pip install playwright && playwright install chromium
 
     Args:
         date: Target date in YYYY-MM-DD format
@@ -27,79 +34,81 @@ def get_sbi(date: str) -> pd.DataFrame:
     Returns:
         DataFrame with columns: [code, name, datetime]
     """
-    url = config.build_url(date)
-    logger.debug(f"Fetching {url}")
-
     try:
-        html_pages = fetch_browser_with_pagination(
-            url=url,
-            table_selector=config.TABLE_SELECTOR,
-            next_button_text=config.NEXT_BUTTON,
-            view_all_text=config.VIEW_ALL_BUTTON,
-        )
-    except ImportError as e:
-        logger.warning(str(e))
-        return pd.DataFrame(columns=["code", "name", "datetime"])
+        # Step 1: Fetch page to extract hash
+        page_url = config.build_url(date)
+        logger.debug(f"Fetching SBI page for hash: {page_url}")
+        page_html = fetch(page_url)
+
+        hash_value = config.extract_hash(page_html)
+        if not hash_value:
+            logger.error("Could not extract hash from SBI page")
+            return _EMPTY_DF.copy()
+
+        # Step 2: Call JSONP API
+        params = config.build_api_params(hash_value, date)
+        logger.debug(f"Calling SBI API with hash={hash_value[:8]}...")
+        jsonp_text = fetch(config.API_ENDPOINT, params=params)
+
+        # Step 3: Parse JSONP → list of dicts
+        items = _parse_jsonp(jsonp_text)
+        if not items:
+            return _EMPTY_DF.copy()
+
+        # Step 4: Build DataFrame
+        return _build_dataframe(items, date)
+
     except Exception as e:
         logger.error(f"SBI scraping failed: {e}")
-        return pd.DataFrame(columns=["code", "name", "datetime"])
-
-    if not html_pages:
-        return pd.DataFrame(columns=["code", "name", "datetime"])
-
-    # Parse all pages
-    all_dfs = []
-    for html in html_pages:
-        df = parse_table(html)
-        if not df.empty:
-            all_dfs.append(df)
-
-    if not all_dfs:
-        return pd.DataFrame(columns=["code", "name", "datetime"])
-
-    raw_df = pd.concat(all_dfs, ignore_index=True)
-    return _parse(raw_df, date)
+        return _EMPTY_DF.copy()
 
 
-def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
-    """Parse raw SBI DataFrame into standard format."""
-    result = pd.DataFrame()
+def _parse_jsonp(text: str) -> list[dict]:
+    """
+    Parse JSONP response into a list of dicts.
 
-    # Parse date
-    if "発表日" in raw_df.columns:
-        result["_date"] = to_datetime(raw_df["発表日"], format=config.DATE_FORMAT)
-        result["_date"] = result["_date"].fillna(pd.to_datetime(date))
-    else:
-        result["_date"] = pd.to_datetime(date)
+    The response is a JSONP callback wrapping a JS object with unquoted keys.
+    We extract the "body" array and fix unquoted keys to make it valid JSON.
+    """
+    # Extract body array content
+    body_match = re.search(r'"body"\s*:\s*\[(.*?)\]\s*\}', text, re.DOTALL)
+    if not body_match:
+        logger.warning("Could not find body array in JSONP response")
+        return []
 
-    # Find time column (may have space: "発表 時刻")
-    time_col = None
-    for col in raw_df.columns:
-        if config.TIME_COLUMN_PATTERN in col:
-            time_col = col
-            break
+    items_str = "[" + body_match.group(1) + "]"
 
-    if time_col:
-        result["_time"] = extract_regex(raw_df[time_col], config.TIME_PATTERN)
-    else:
-        result["_time"] = pd.NA
+    # Fix unquoted JS keys: word followed by colon → add quotes
+    items_str = re.sub(r"(\s)(\w+)\s*:", r'\1"\2":', items_str)
 
-    # Find name column
-    name_col = None
-    for col in raw_df.columns:
-        if config.NAME_COLUMN_PATTERN in col:
-            name_col = col
-            break
+    try:
+        return json.loads(items_str)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSONP body: {e}")
+        return []
 
-    if name_col:
-        col_data = raw_df[name_col]
-        result["name"] = extract_regex(col_data, config.NAME_PATTERN)
-        result["code"] = extract_regex(col_data, config.CODE_PATTERN)
-    else:
-        result["name"] = None
-        result["code"] = None
 
-    # Combine to datetime
-    result["datetime"] = combine_datetime(result["_date"], result["_time"])
+def _build_dataframe(items: list[dict], date: str) -> pd.DataFrame:
+    """Build DataFrame from parsed API items."""
+    rows = []
+    for item in items:
+        code = item.get("productCode", "")
+        name = item.get("productName", "")
+        time_raw = item.get("time", "")
 
-    return result[["code", "name", "datetime"]].dropna(subset=["code"])
+        if not code:
+            continue
+
+        # Extract time from "13:20<br>(予定)"
+        time_match = re.search(config.TIME_PATTERN, time_raw)
+        if time_match:
+            dt = pd.Timestamp(f"{date} {time_match.group(1)}")
+        else:
+            dt = pd.NaT
+
+        rows.append({"code": code, "name": name, "datetime": dt})
+
+    if not rows:
+        return _EMPTY_DF.copy()
+
+    return pd.DataFrame(rows)

@@ -11,7 +11,7 @@ uv sync
 # Run tests
 uv run pytest
 
-# Run tests (skip slow browser tests)
+# Run tests (skip slow tests)
 uv run pytest -k "not slow"
 
 # Serve docs locally
@@ -35,7 +35,7 @@ src/pykabu_calendar/
 ├── sources/
 │   ├── matsui/            # Matsui Securities
 │   ├── tradersweb/        # Tradersweb
-│   └── sbi/               # SBI Securities (requires Playwright)
+│   └── sbi/               # SBI Securities (JSONP API, no browser needed)
 ├── ir/                    # Company IR page discovery
 │   ├── discovery.py       # Find IR pages from company website
 │   ├── parser.py          # Rule-based datetime extraction + LLM fallback
@@ -128,7 +128,8 @@ df = cal.get_calendar("2026-02-10", ir_eager=True)
 
 - Tests use **dynamic dates** (finds future date with earnings)
 - Tradersweb blocks cloud IPs (Colab) - handled gracefully
-- Browser tests marked with `@pytest.mark.slow`
+- SBI now uses JSONP API (fast, no browser needed)
+- `@pytest.mark.slow` reserved for future browser-based tests
 - IR/LLM unit tests use mocks (fast, no network)
 - Calendar tests pass `include_ir=False` for speed
 

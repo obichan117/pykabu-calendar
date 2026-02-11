@@ -5,7 +5,6 @@ All tests use live data - no mocks.
 Uses dynamic dates to ensure tests work regardless of when they're run.
 """
 
-import pytest
 import pandas as pd
 
 from pykabu_calendar.sources import get_matsui, get_tradersweb, get_sbi
@@ -95,9 +94,8 @@ class TestTradersweb:
         assert "datetime" in df.columns
 
 
-@pytest.mark.slow
 class TestSbi:
-    """Tests for SBI scraper (requires Playwright)."""
+    """Tests for SBI scraper."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
