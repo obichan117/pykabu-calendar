@@ -25,3 +25,9 @@ llm_extract_datetime_max_chars: 30000
 # Cache
 cache_dir: ~/.pykabu_calendar
 cache_ttl_days: 30
+
+# TSE trading session boundaries (minutes from midnight)
+trading_morning_open: 540   # 9:00
+trading_morning_close: 690  # 11:30
+trading_afternoon_open: 750  # 12:30
+trading_afternoon_close: 930 # 15:30

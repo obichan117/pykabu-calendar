@@ -2,6 +2,10 @@
 
 Japanese earnings calendar aggregator.
 
+[![PyPI version](https://img.shields.io/pypi/v/pykabu-calendar)](https://pypi.org/project/pykabu-calendar/)
+[![Python](https://img.shields.io/pypi/pyversions/pykabu-calendar)](https://pypi.org/project/pykabu-calendar/)
+[![CI](https://github.com/obichan117/pykabu-calendar/actions/workflows/ci.yml/badge.svg)](https://github.com/obichan117/pykabu-calendar/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/obichan117/pykabu-calendar/blob/main/examples/quickstart.ipynb)
 
 ## Installation

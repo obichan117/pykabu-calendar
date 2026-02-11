@@ -11,6 +11,7 @@ from pykabutan import Ticker
 
 from ...config import get_settings
 from ...core.fetch import fetch_safe, get_session
+from ...core.parse import HTML_PARSER
 from ...llm import LLMClient, get_default_client
 from .patterns import get_candidate_urls, extract_ir_keywords
 
@@ -121,7 +122,7 @@ def _find_ir_link_in_html(html: str, base_url: str) -> str | None:
     Returns:
         IR page URL if found, None otherwise
     """
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, HTML_PARSER)
     ir_keywords = extract_ir_keywords()
 
     # Search for links with IR-related text

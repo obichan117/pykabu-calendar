@@ -58,6 +58,12 @@ class Settings:
     cache_dir: str = _DEFAULTS["cache_dir"]
     cache_ttl_days: int = _DEFAULTS["cache_ttl_days"]
 
+    # TSE trading hours (minutes from midnight)
+    trading_morning_open: int = _DEFAULTS["trading_morning_open"]
+    trading_morning_close: int = _DEFAULTS["trading_morning_close"]
+    trading_afternoon_open: int = _DEFAULTS["trading_afternoon_open"]
+    trading_afternoon_close: int = _DEFAULTS["trading_afternoon_close"]
+
     @property
     def headers(self) -> dict[str, str]:
         """HTTP request headers derived from settings."""

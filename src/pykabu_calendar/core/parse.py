@@ -13,6 +13,9 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+# Default HTML parser for BeautifulSoup — change if lxml is not available
+HTML_PARSER = "lxml"
+
 
 def parse_table(
     html: str,
@@ -33,7 +36,7 @@ def parse_table(
         DataFrame parsed from table
     """
     if selector:
-        soup = BeautifulSoup(html, "lxml")
+        soup = BeautifulSoup(html, HTML_PARSER)
         table = soup.select_one(selector)
         if not table:
             logger.warning(f"Table not found with selector: {selector}")

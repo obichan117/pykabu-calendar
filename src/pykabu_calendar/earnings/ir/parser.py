@@ -9,6 +9,7 @@ from enum import Enum
 from bs4 import BeautifulSoup
 
 from ...core.fetch import fetch_safe
+from ...core.parse import HTML_PARSER
 from ...llm import LLMClient, get_default_client
 
 logger = logging.getLogger(__name__)
@@ -279,7 +280,7 @@ def parse_earnings_from_html(
     Returns:
         EarningsInfo if found, None otherwise
     """
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, HTML_PARSER)
     contexts = _find_earnings_context(soup, code)
     logger.debug(f"Found {len(contexts)} potential contexts")
 

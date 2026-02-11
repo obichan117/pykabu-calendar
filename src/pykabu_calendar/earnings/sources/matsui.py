@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from ...core.fetch import fetch
-from ...core.parse import parse_table, extract_regex, to_datetime, combine_datetime
+from ...core.parse import HTML_PARSER, parse_table, extract_regex, to_datetime, combine_datetime
 from ..base import EarningsSource, load_config
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class MatsuiEarningsSource(EarningsSource):
                 logger.warning(f"Matsui request failed: {e}")
                 break
 
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
 
             result_p = soup.select_one(_config["result_selector"])
             if result_p and "0件中" in result_p.text:

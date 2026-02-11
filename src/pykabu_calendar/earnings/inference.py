@@ -10,17 +10,13 @@ import pandas as pd
 import pykabutan as pk
 import requests
 
+from ..config import get_settings
+
 logger = logging.getLogger(__name__)
 
 # Confidence thresholds for historical pattern inference
 _HIGH_CONFIDENCE_RATIO = 0.75
 _MEDIUM_CONFIDENCE_RATIO = 0.5
-
-# TSE trading session boundaries (minutes from midnight)
-_MORNING_OPEN = 540  # 9:00
-_MORNING_CLOSE = 690  # 11:30
-_AFTERNOON_OPEN = 750  # 12:30
-_AFTERNOON_CLOSE = 930  # 15:30
 
 
 def get_past_earnings(code: str, n_recent: int = 8) -> list[pd.Timestamp]:
@@ -98,19 +94,19 @@ def infer_datetime(
 def is_during_trading_hours(dt: pd.Timestamp) -> bool:
     """Check if datetime is during trading hours (zaraba).
 
-    Trading hours (open inclusive, close exclusive):
-    - Morning: 9:00 <= t < 11:30
-    - Afternoon: 12:30 <= t < 15:30
+    Trading hours (open inclusive, close exclusive) are read from settings.
+    Defaults: Morning 9:00-11:30, Afternoon 12:30-15:30.
     """
     if pd.isna(dt):
         return False
 
+    settings = get_settings()
     minutes = dt.hour * 60 + dt.minute
 
-    if _MORNING_OPEN <= minutes < _MORNING_CLOSE:
+    if settings.trading_morning_open <= minutes < settings.trading_morning_close:
         return True
 
-    if _AFTERNOON_OPEN <= minutes < _AFTERNOON_CLOSE:
+    if settings.trading_afternoon_open <= minutes < settings.trading_afternoon_close:
         return True
 
     return False

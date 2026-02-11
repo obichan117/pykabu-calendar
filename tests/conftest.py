@@ -8,8 +8,6 @@ Uses dynamic dates to ensure tests work regardless of when they're run.
 import pytest
 from datetime import datetime, timedelta
 
-from pykabu_calendar.earnings.sources import MatsuiEarningsSource
-
 
 def pytest_configure(config):
     """Add custom markers."""
@@ -36,6 +34,14 @@ def pytest_addoption(parser):
     )
 
 
+def _next_weekday() -> str:
+    """Return next weekday as YYYY-MM-DD (no network, always works)."""
+    target = datetime.now() + timedelta(days=1)
+    while target.weekday() >= 5:
+        target += timedelta(days=1)
+    return target.strftime("%Y-%m-%d")
+
+
 def find_date_with_earnings(max_days=30, min_entries=5):
     """
     Find a future weekday with earnings data for testing.
@@ -44,6 +50,8 @@ def find_date_with_earnings(max_days=30, min_entries=5):
     with >= min_entries earnings. Falls back to next weekday if all
     network calls fail (offline-safe).
     """
+    from pykabu_calendar.earnings.sources import MatsuiEarningsSource
+
     today = datetime.now()
     try:
         matsui = MatsuiEarningsSource()
@@ -61,13 +69,10 @@ def find_date_with_earnings(max_days=30, min_entries=5):
     except Exception:
         pass
     # Fallback: next weekday (works offline)
-    target = today + timedelta(days=1)
-    while target.weekday() >= 5:
-        target += timedelta(days=1)
-    return target.strftime("%Y-%m-%d")
+    return _next_weekday()
 
 
-# Cache at module level for efficiency
+# Lazy cache — only populated when first slow test calls get_test_date()
 _CACHED_TEST_DATE = None
 
 
@@ -78,18 +83,15 @@ def test_date():
 
     Cached for the entire test session to avoid repeated lookups.
     """
-    global _CACHED_TEST_DATE
-    if _CACHED_TEST_DATE is None:
-        _CACHED_TEST_DATE = find_date_with_earnings()
-        print(f"\nUsing test date: {_CACHED_TEST_DATE}")
-    return _CACHED_TEST_DATE
+    return get_test_date()
 
 
 def get_test_date():
     """
     Function version for use outside fixtures.
 
-    Returns cached date or finds one.
+    Lazily finds and caches a date with earnings data.
+    Only hits the network on first call (typically from a slow test).
     """
     global _CACHED_TEST_DATE
     if _CACHED_TEST_DATE is None:

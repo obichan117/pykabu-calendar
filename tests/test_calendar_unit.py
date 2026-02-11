@@ -14,6 +14,9 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 
 from pykabu_calendar.earnings.calendar import (
+    _add_history,
+    _add_ir,
+    _get_ir_datetime,
     _merge_sources,
     _build_candidates,
     _compute_confidence,
@@ -444,3 +447,115 @@ class TestGetCalendarUnit:
             infer_from_history=False,
         )
         assert len(result) == 1
+
+
+# --- _add_history ---
+
+class TestAddHistory:
+    """Unit tests for _add_history with mocked dependencies."""
+
+    @patch("pykabu_calendar.earnings.calendar.run_parallel")
+    def test_adds_columns(self, mock_parallel):
+        """Should add inferred_datetime and past_datetimes columns."""
+        mock_parallel.return_value = {
+            "7203": ([pd.Timestamp("2025-11-01 15:00")], pd.Timestamp("2026-02-10 15:00")),
+        }
+        df = pd.DataFrame({"code": ["7203"], "sbi_datetime": [pd.Timestamp("2026-02-10 15:00")]})
+        result = _add_history(df, "2026-02-10", infer=True)
+        assert "inferred_datetime" in result.columns
+        assert "past_datetimes" in result.columns
+        assert result["inferred_datetime"].iloc[0] == pd.Timestamp("2026-02-10 15:00")
+
+    @patch("pykabu_calendar.earnings.calendar.run_parallel")
+    def test_no_infer(self, mock_parallel):
+        """With infer=False, inferred_datetime should be NaT."""
+        mock_parallel.return_value = {
+            "7203": (None, pd.NaT),
+        }
+        df = pd.DataFrame({"code": ["7203"], "sbi_datetime": [pd.Timestamp("2026-02-10 15:00")]})
+        result = _add_history(df, "2026-02-10", infer=False)
+        assert pd.isna(result["inferred_datetime"].iloc[0])
+
+    @patch("pykabu_calendar.earnings.calendar.run_parallel")
+    def test_missing_code_in_results(self, mock_parallel):
+        """Codes not in results should get NaT and None."""
+        mock_parallel.return_value = {}
+        df = pd.DataFrame({"code": ["9999"], "sbi_datetime": [pd.NaT]})
+        result = _add_history(df, "2026-02-10", infer=True)
+        assert pd.isna(result["inferred_datetime"].iloc[0])
+        assert result["past_datetimes"].iloc[0] is None
+
+
+# --- _add_ir ---
+
+class TestAddIr:
+    """Unit tests for _add_ir with mocked dependencies."""
+
+    @patch("pykabu_calendar.earnings.calendar.run_parallel")
+    def test_adds_ir_datetime_column(self, mock_parallel):
+        """Should add ir_datetime column."""
+        mock_parallel.return_value = {
+            "7203": pd.Timestamp("2026-02-10 14:00"),
+        }
+        df = pd.DataFrame({"code": ["7203"], "sbi_datetime": [pd.Timestamp("2026-02-10 15:00")]})
+        result = _add_ir(df)
+        assert "ir_datetime" in result.columns
+        assert result["ir_datetime"].iloc[0] == pd.Timestamp("2026-02-10 14:00")
+
+    @patch("pykabu_calendar.earnings.calendar.run_parallel")
+    def test_nat_for_missing(self, mock_parallel):
+        """Codes not in results should get NaT."""
+        mock_parallel.return_value = {}
+        df = pd.DataFrame({"code": ["9999"], "sbi_datetime": [pd.NaT]})
+        result = _add_ir(df)
+        assert pd.isna(result["ir_datetime"].iloc[0])
+
+
+# --- _get_ir_datetime ---
+
+class TestGetIrDatetime:
+    """Unit tests for _get_ir_datetime with mocked dependencies."""
+
+    @patch("pykabu_calendar.earnings.calendar.get_cached")
+    def test_returns_cached_datetime(self, mock_cached):
+        """Should return cached datetime when available."""
+        mock_entry = MagicMock()
+        mock_entry.last_earnings_datetime = "2026-02-10 14:00"
+        mock_cached.return_value = mock_entry
+
+        result = _get_ir_datetime("7203")
+        assert result == pd.Timestamp("2026-02-10 14:00")
+
+    @patch("pykabu_calendar.earnings.calendar.save_cache")
+    @patch("pykabu_calendar.earnings.calendar.parse_earnings_datetime")
+    @patch("pykabu_calendar.earnings.calendar.discover_ir_page")
+    @patch("pykabu_calendar.earnings.calendar.get_cached")
+    def test_returns_nat_when_no_page(self, mock_cached, mock_discover, mock_parse, mock_save):
+        """Should return NaT when no IR page found."""
+        mock_cached.return_value = None
+        mock_discover.return_value = None
+
+        result = _get_ir_datetime("9999")
+        assert pd.isna(result)
+        mock_parse.assert_not_called()
+
+    @patch("pykabu_calendar.earnings.calendar.save_cache")
+    @patch("pykabu_calendar.earnings.calendar.parse_earnings_datetime")
+    @patch("pykabu_calendar.earnings.calendar.discover_ir_page")
+    @patch("pykabu_calendar.earnings.calendar.get_cached")
+    def test_discovers_and_parses(self, mock_cached, mock_discover, mock_parse, mock_save):
+        """Should discover page, parse datetime, and cache result."""
+        mock_cached.return_value = None
+        mock_page = MagicMock()
+        mock_page.url = "https://example.com/ir/"
+        mock_page.page_type = "calendar"
+        mock_page.discovered_via = "pattern"
+        mock_discover.return_value = mock_page
+
+        mock_earnings = MagicMock()
+        mock_earnings.datetime = "2026-02-10 14:00"
+        mock_parse.return_value = mock_earnings
+
+        result = _get_ir_datetime("7203", eager=True)
+        assert result == pd.Timestamp("2026-02-10 14:00")
+        mock_save.assert_called_once()
