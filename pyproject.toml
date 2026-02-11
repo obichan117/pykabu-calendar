@@ -40,12 +40,18 @@ dev = [
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.24.0",
 ]
+cli = [
+    "click>=8.0,<9.0",
+]
 llm = [
     "google-genai>=1.0.0,<2.0.0",
 ]
 all = [
-    "pykabu-calendar[dev,llm]",
+    "pykabu-calendar[dev,cli,llm]",
 ]
+
+[project.scripts]
+pykabu = "pykabu_calendar.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/obichan117/pykabu-calendar"

@@ -28,6 +28,7 @@ uv build && uv run twine upload dist/* -u __token__ -p $PYPI_TOKEN
 
 ```
 src/pykabu_calendar/
+├── cli.py                 # Click CLI: pykabu calendar|check|lookup|config
 ├── config.py              # Settings dataclass, configure(), get_settings()
 ├── config.yaml            # Default values loaded at import time
 ├── core/
@@ -88,6 +89,7 @@ Cache successful patterns for reuse
 
 | File | Purpose |
 |------|---------|
+| `cli.py` | Click CLI entry point (`pykabu calendar\|check\|lookup\|config`) |
 | `config.py` | `Settings` dataclass, `configure()`, `get_settings()`, `on_configure()` |
 | `config.yaml` | Default values for all settings (timeout, max_workers, LLM params, cache) |
 | `earnings/calendar.py` | Main aggregator, parallel fetching, IR integration, candidate ranking |
