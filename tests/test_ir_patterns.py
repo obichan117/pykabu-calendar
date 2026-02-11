@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from pykabu_calendar.earnings.ir import get_candidate_urls, IR_PATH_PATTERNS, CALENDAR_PATH_PATTERNS
-from pykabu_calendar.earnings.ir.patterns import normalize_base_url, is_known_ir_platform
+from pykabu_calendar.earnings.ir.patterns import normalize_base_url
 
 
 class TestNormalizeBaseUrl:
@@ -94,23 +94,6 @@ class TestGetCandidateUrls:
         """Test handling empty URL."""
         assert get_candidate_urls("") == []
         assert get_candidate_urls(None) == []
-
-
-class TestIsKnownIrPlatform:
-    """Tests for is_known_ir_platform function."""
-
-    def test_irbank(self):
-        """Test detecting irbank.net."""
-        assert is_known_ir_platform("https://irbank.net/E00000/")
-
-    def test_regular_domain(self):
-        """Test regular domain is not IR platform."""
-        assert not is_known_ir_platform("https://www.toyota.co.jp/ir/")
-
-    def test_empty_url(self):
-        """Test handling empty URL."""
-        assert not is_known_ir_platform("")
-        assert not is_known_ir_platform(None)
 
 
 class TestPatternConstants:

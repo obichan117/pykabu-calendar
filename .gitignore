@@ -76,6 +76,9 @@ site/
 .DS_Store
 Thumbs.db
 
+# Task tracking
+tasks/
+
 # uv
 .python-version
 uv.lock

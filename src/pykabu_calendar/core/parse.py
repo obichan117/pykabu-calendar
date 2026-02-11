@@ -7,7 +7,6 @@ It never imports requests/playwright - only takes raw input.
 
 import logging
 from io import StringIO
-from typing import Optional
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def parse_table(
     html: str,
-    selector: Optional[str] = None,
+    selector: str | None = None,
     index: int = 0,
     **read_html_kwargs,
 ) -> pd.DataFrame:
@@ -68,7 +67,7 @@ def extract_regex(series: pd.Series, pattern: str, group: int = 1) -> pd.Series:
 
 def to_datetime(
     series: pd.Series,
-    format: Optional[str] = None,
+    format: str | None = None,
     errors: str = "coerce",
 ) -> pd.Series:
     """
@@ -109,16 +108,3 @@ def combine_datetime(
     # Set to NaT where original time was unknown
     combined = combined.where(time_series.notna(), pd.NaT)
     return combined
-
-
-def clean_text(series: pd.Series) -> pd.Series:
-    """
-    Clean text series (strip whitespace, normalize).
-
-    Args:
-        series: Series of strings
-
-    Returns:
-        Cleaned Series
-    """
-    return series.astype(str).str.strip().str.replace(r"\s+", " ", regex=True)

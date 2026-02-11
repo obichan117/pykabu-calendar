@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from pykabutan import Ticker
 
-from ...config import HEADERS, TIMEOUT
+from ...config import get_settings
 from ...core.fetch import fetch
 from ...llm import LLMClient, get_default_client
 from .patterns import get_candidate_urls, extract_ir_keywords
@@ -41,7 +41,7 @@ class IRPageInfo:
         return f"IRPageInfo({self.company_code}: {self.url} [{self.page_type.value}])"
 
 
-def _check_url_exists(url: str, timeout: int = TIMEOUT) -> tuple[bool, str | None]:
+def _check_url_exists(url: str, timeout: int | None = None) -> tuple[bool, str | None]:
     """Check if a URL exists and is accessible.
 
     Args:
@@ -51,10 +51,13 @@ def _check_url_exists(url: str, timeout: int = TIMEOUT) -> tuple[bool, str | Non
     Returns:
         Tuple of (exists, final_url after redirects)
     """
+    settings = get_settings()
+    if timeout is None:
+        timeout = settings.timeout
     try:
         response = requests.head(
             url,
-            headers=HEADERS,
+            headers=settings.headers,
             timeout=timeout,
             allow_redirects=True,
         )
@@ -65,7 +68,7 @@ def _check_url_exists(url: str, timeout: int = TIMEOUT) -> tuple[bool, str | Non
         if response.status_code in (403, 405):
             response = requests.get(
                 url,
-                headers=HEADERS,
+                headers=settings.headers,
                 timeout=timeout,
                 allow_redirects=True,
                 stream=True,  # Don't download body
@@ -81,7 +84,7 @@ def _check_url_exists(url: str, timeout: int = TIMEOUT) -> tuple[bool, str | Non
         return False, None
 
 
-def _fetch_html(url: str, timeout: int = TIMEOUT) -> str | None:
+def _fetch_html(url: str, timeout: int | None = None) -> str | None:
     """Fetch HTML content from a URL.
 
     Args:
@@ -178,7 +181,7 @@ def discover_ir_page(
     code: str,
     llm_client: LLMClient | None = None,
     use_llm_fallback: bool = True,
-    timeout: int = TIMEOUT,
+    timeout: int | None = None,
 ) -> IRPageInfo | None:
     """Discover the IR page for a company.
 
@@ -274,31 +277,3 @@ def discover_ir_page(
 
     logger.info(f"Could not discover IR page for {code}")
     return None
-
-
-def discover_ir_pages(
-    codes: list[str],
-    llm_client: LLMClient | None = None,
-    use_llm_fallback: bool = True,
-    timeout: int = TIMEOUT,
-) -> dict[str, IRPageInfo | None]:
-    """Discover IR pages for multiple companies.
-
-    Args:
-        codes: List of stock codes
-        llm_client: Optional LLM client for fallback discovery
-        use_llm_fallback: Whether to use LLM as fallback
-        timeout: Request timeout in seconds
-
-    Returns:
-        Dict mapping code to IRPageInfo (or None if not found)
-    """
-    results = {}
-    for code in codes:
-        results[code] = discover_ir_page(
-            code,
-            llm_client=llm_client,
-            use_llm_fallback=use_llm_fallback,
-            timeout=timeout,
-        )
-    return results

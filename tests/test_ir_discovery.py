@@ -7,7 +7,6 @@ from pykabu_calendar.earnings.ir import (
     IRPageInfo,
     IRPageType,
     discover_ir_page,
-    discover_ir_pages,
 )
 from pykabu_calendar.earnings.ir.discovery import (
     _check_url_exists,
@@ -252,26 +251,6 @@ class TestDiscoverIrPage:
         assert result is not None
         assert "special-ir-page" in result.url
         assert result.discovered_via == "homepage_link"
-
-
-class TestDiscoverIrPages:
-    """Tests for discover_ir_pages function."""
-
-    @patch("pykabu_calendar.earnings.ir.discovery.discover_ir_page")
-    def test_multiple_codes(self, mock_discover):
-        """Test discovering multiple codes."""
-        mock_discover.side_effect = [
-            IRPageInfo("https://a.com/ir/", IRPageType.LANDING, "1111"),
-            None,
-            IRPageInfo("https://c.com/ir/", IRPageType.LANDING, "3333"),
-        ]
-
-        results = discover_ir_pages(["1111", "2222", "3333"], use_llm_fallback=False)
-
-        assert len(results) == 3
-        assert results["1111"] is not None
-        assert results["2222"] is None
-        assert results["3333"] is not None
 
 
 @pytest.mark.slow

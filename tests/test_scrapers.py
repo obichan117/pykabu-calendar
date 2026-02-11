@@ -8,7 +8,7 @@ Uses dynamic dates to ensure tests work regardless of when they're run.
 import pandas as pd
 
 from pykabu_calendar.earnings.sources import get_matsui, get_tradersweb, get_sbi
-from pykabu_calendar.config import HEADERS, USER_AGENT
+from pykabu_calendar.config import get_settings
 from pykabu_calendar.earnings.sources.matsui import build_url as build_matsui_url
 from pykabu_calendar.earnings.sources.tradersweb import build_url as build_tradersweb_url
 from pykabu_calendar.earnings.sources.sbi import build_url as build_sbi_url
@@ -24,13 +24,15 @@ class TestConfig:
 
     def test_user_agent_is_modern(self):
         """User-Agent should be modern Chrome."""
-        assert "Chrome/131" in USER_AGENT
-        assert "Windows NT 10.0" in USER_AGENT
+        settings = get_settings()
+        assert "Chrome/131" in settings.user_agent
+        assert "Windows NT 10.0" in settings.user_agent
 
     def test_headers_include_user_agent(self):
         """Headers should include User-Agent."""
-        assert "User-Agent" in HEADERS
-        assert HEADERS["User-Agent"] == USER_AGENT
+        settings = get_settings()
+        assert "User-Agent" in settings.headers
+        assert settings.headers["User-Agent"] == settings.user_agent
 
     def test_build_matsui_url(self):
         """Should build correct Matsui URL."""

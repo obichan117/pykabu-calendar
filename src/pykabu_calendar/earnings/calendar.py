@@ -5,13 +5,13 @@ earnings datetime calendar.
 """
 
 import logging
-from typing import Optional
 
 import pandas as pd
 
 from .sources import SBIEarningsSource, MatsuiEarningsSource, TraderswebEarningsSource
 from .inference import get_past_earnings, infer_datetime
 from .ir import discover_ir_page, parse_earnings_datetime, get_cached, save_cache
+from ..config import get_settings
 from ..core.parallel import run_parallel
 from ..llm import LLMClient
 
@@ -46,7 +46,7 @@ OUTPUT_COLUMNS = [
 
 def get_calendar(
     date: str,
-    sources: Optional[list[str]] = None,
+    sources: list[str] | None = None,
     infer_from_history: bool = True,
     include_ir: bool = True,
     ir_eager: bool = False,
@@ -161,23 +161,30 @@ def _merge_sources(source_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 def _add_history(df: pd.DataFrame, date: str, infer: bool = True) -> pd.DataFrame:
     """Add past_datetimes and optionally inferred_datetime columns."""
-    inferred = []
+    settings = get_settings()
+
+    def _fetch_history(code: str) -> tuple:
+        past_dts = get_past_earnings(code)
+        if infer:
+            inferred_dt, confidence, _ = infer_datetime(code, date)
+        else:
+            inferred_dt = pd.NaT
+        return past_dts if past_dts else None, inferred_dt
+
+    tasks = {str(code): lambda c=str(code): _fetch_history(c) for code in df["code"]}
+    results = run_parallel(tasks, max_workers=settings.max_workers)
+
     past_list = []
-
+    inferred = []
     for code in df["code"]:
-        try:
-            past_dts = get_past_earnings(str(code))
-            past_list.append(past_dts if past_dts else None)
-
-            if infer:
-                inferred_dt, confidence, _ = infer_datetime(str(code), date)
-                inferred.append(inferred_dt)
-            else:
-                inferred.append(pd.NaT)
-        except Exception as e:
-            logger.warning(f"History lookup failed for {code}: {e}")
-            inferred.append(pd.NaT)
+        code_str = str(code)
+        if code_str in results:
+            past_dts, inferred_dt = results[code_str]
+            past_list.append(past_dts)
+            inferred.append(inferred_dt)
+        else:
             past_list.append(None)
+            inferred.append(pd.NaT)
 
     df["inferred_datetime"] = inferred
     df["past_datetimes"] = past_list
@@ -191,19 +198,24 @@ def _add_ir(
     llm_client: LLMClient | None = None,
 ) -> pd.DataFrame:
     """Add ir_datetime column via IR page discovery and parsing."""
+    settings = get_settings()
+
+    tasks = {
+        str(code): lambda c=str(code): _get_ir_datetime(
+            c, eager=eager, llm_client=llm_client
+        )
+        for code in df["code"]
+    }
+    results = run_parallel(tasks, max_workers=settings.max_workers)
+
     ir_datetimes = []
     ir_found = 0
-
     for code in df["code"]:
         code_str = str(code)
-        try:
-            ir_dt = _get_ir_datetime(code_str, eager=eager, llm_client=llm_client)
-            ir_datetimes.append(ir_dt)
-            if ir_dt is not pd.NaT:
-                ir_found += 1
-        except Exception as e:
-            logger.warning(f"[ir] Failed for {code_str}: {e}")
-            ir_datetimes.append(pd.NaT)
+        ir_dt = results.get(code_str, pd.NaT)
+        ir_datetimes.append(ir_dt)
+        if ir_dt is not pd.NaT:
+            ir_found += 1
 
     df["ir_datetime"] = ir_datetimes
     logger.info(f"[ir] Found {ir_found}/{len(df)} IR datetimes")

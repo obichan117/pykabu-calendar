@@ -5,7 +5,6 @@ from .discovery import (
     IRPageInfo,
     IRPageType,
     discover_ir_page,
-    discover_ir_pages,
 )
 from .parser import (
     EarningsInfo,
@@ -30,7 +29,6 @@ __all__ = [
     "IRPageInfo",
     "IRPageType",
     "discover_ir_page",
-    "discover_ir_pages",
     # Parser
     "EarningsInfo",
     "ParseConfidence",

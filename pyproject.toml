@@ -39,11 +39,8 @@ llm = [
     "google-genai>=1.0.0",
     "ollama>=0.1.0",
 ]
-browser = [
-    "playwright>=1.40.0",
-]
 all = [
-    "pykabu-calendar[dev,llm,browser]",
+    "pykabu-calendar[dev,llm]",
 ]
 
 [project.urls]

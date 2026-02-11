@@ -1,0 +1,22 @@
+# Default configuration for pykabu-calendar.
+# These values are used as field defaults in the Settings dataclass.
+# Override at runtime via configure().
+
+# HTTP
+timeout: 30
+user_agent: >-
+  Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+  AppleWebKit/537.36 (KHTML, like Gecko)
+  Chrome/131.0.0.0 Safari/537.36
+
+# Parallelism
+max_workers: 4
+
+# LLM
+llm_provider: gemini
+llm_model: gemini-2.0-flash
+llm_timeout: 60.0
+
+# Cache
+cache_dir: ~/.pykabu_calendar
+cache_ttl_days: 30

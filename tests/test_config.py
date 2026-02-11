@@ -19,6 +19,7 @@ class TestSettings:
     def test_defaults(self):
         s = Settings()
         assert s.timeout == 30
+        assert s.max_workers == 4
         assert s.llm_model == "gemini-2.0-flash"
         assert s.llm_timeout == 60.0
         assert s.llm_provider == "gemini"
@@ -73,6 +74,11 @@ class TestConfigure:
         s = get_settings()
         assert s.timeout == 10
         assert s.llm_model == "test-model"
+
+    def test_configure_max_workers(self):
+        configure(max_workers=8)
+        s = get_settings()
+        assert s.max_workers == 8
 
 
 class TestSettingsPropagation:

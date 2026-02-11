@@ -2,7 +2,6 @@
 
 import logging
 import sqlite3
-from typing import Optional
 
 import pandas as pd
 
@@ -81,7 +80,7 @@ def export_to_sqlite(
 def load_from_sqlite(
     path: str,
     table: str = "earnings",
-    date: Optional[str] = None,
+    date: str | None = None,
 ) -> pd.DataFrame:
     """Load calendar DataFrame from SQLite.
 

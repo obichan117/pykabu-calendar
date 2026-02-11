@@ -135,28 +135,6 @@ def get_candidate_urls(
     return candidates
 
 
-def is_known_ir_platform(url: str) -> bool:
-    """Check if a URL is on a known IR platform.
-
-    Args:
-        url: URL to check
-
-    Returns:
-        True if the URL is on a known IR platform
-    """
-    if not url:
-        return False
-
-    parsed = urlparse(url)
-    domain = parsed.netloc.lower()
-
-    for platform in KNOWN_IR_PLATFORMS:
-        if platform in domain:
-            return True
-
-    return False
-
-
 def extract_ir_keywords() -> list[str]:
     """Get list of keywords that typically indicate IR content.
 

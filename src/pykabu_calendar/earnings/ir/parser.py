@@ -9,7 +9,6 @@ from enum import Enum
 import requests
 from bs4 import BeautifulSoup
 
-from ...config import TIMEOUT
 from ...core.fetch import fetch
 from ...llm import LLMClient, get_default_client
 
@@ -168,7 +167,7 @@ def _has_undetermined_marker(text: str) -> bool:
     return any(kw in text_lower for kw in UNDETERMINED_KEYWORDS)
 
 
-def _fetch_html(url: str, timeout: int = TIMEOUT) -> str | None:
+def _fetch_html(url: str, timeout: int | None = None) -> str | None:
     """Fetch HTML from URL."""
     try:
         return fetch(url, timeout=timeout)
@@ -278,7 +277,7 @@ def parse_earnings_datetime(
     code: str | None = None,
     llm_client: LLMClient | None = None,
     use_llm_fallback: bool = True,
-    timeout: int = TIMEOUT,
+    timeout: int | None = None,
 ) -> EarningsInfo | None:
     """Parse earnings announcement datetime from an IR page.
 

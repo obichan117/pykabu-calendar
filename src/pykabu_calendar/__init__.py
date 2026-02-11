@@ -28,7 +28,7 @@ from .core.io import export_to_csv, export_to_parquet, export_to_sqlite, load_fr
 from .config import configure, get_settings
 from .earnings.inference import get_past_earnings, infer_datetime, is_during_trading_hours
 from .earnings.sources import get_matsui, get_sbi, get_tradersweb
-from .earnings.ir import discover_ir_page, discover_ir_pages, parse_earnings_datetime
+from .earnings.ir import discover_ir_page, parse_earnings_datetime
 
 __version__ = "0.7.0"
 
@@ -46,7 +46,6 @@ __all__ = [
     "EarningsSource",
     # IR discovery
     "discover_ir_page",
-    "discover_ir_pages",
     "parse_earnings_datetime",
     # Inference
     "get_past_earnings",

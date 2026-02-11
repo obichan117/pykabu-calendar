@@ -5,7 +5,6 @@ Uses pykabutan to fetch past earnings announcement datetimes.
 
 import logging
 from collections import Counter
-from typing import Optional
 
 import pandas as pd
 import pykabutan as pk
@@ -41,8 +40,8 @@ def get_past_earnings(code: str, n_recent: int = 8) -> list[pd.Timestamp]:
 def infer_datetime(
     code: str,
     date: str,
-    past_datetimes: Optional[list[pd.Timestamp]] = None,
-) -> tuple[Optional[pd.Timestamp], str, list[pd.Timestamp]]:
+    past_datetimes: list[pd.Timestamp] | None = None,
+) -> tuple[pd.Timestamp | None, str, list[pd.Timestamp]]:
     """Infer announcement datetime from historical patterns.
 
     Args:

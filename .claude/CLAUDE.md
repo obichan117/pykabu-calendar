@@ -24,11 +24,12 @@ uv run mkdocs gh-deploy --force
 uv build && uv run twine upload dist/* -u __token__ -p $PYPI_TOKEN
 ```
 
-## Architecture (v0.7.0)
+## Architecture (v0.8.0)
 
 ```
 src/pykabu_calendar/
 ├── config.py              # Settings dataclass, configure(), get_settings()
+├── config.yaml            # Default values loaded at import time
 ├── core/
 │   ├── fetch.py           # Generic fetch (requests, thread-safe sessions)
 │   ├── parse.py           # Generic parse (tables, regex, datetime)
@@ -87,7 +88,8 @@ Cache successful patterns for reuse
 
 | File | Purpose |
 |------|---------|
-| `config.py` | `Settings` dataclass, `configure()`, `get_settings()`, backward-compat constants |
+| `config.py` | `Settings` dataclass, `configure()`, `get_settings()`, `on_configure()` |
+| `config.yaml` | Default values for all settings (timeout, max_workers, LLM, cache) |
 | `earnings/calendar.py` | Main aggregator, parallel fetching, IR integration, candidate ranking |
 | `earnings/base.py` | `EarningsSource` ABC, `load_config()`, validation, health check |
 | `earnings/inference.py` | Uses pykabutan for historical earnings patterns |
@@ -95,12 +97,13 @@ Cache successful patterns for reuse
 | `earnings/ir/discovery.py` | Find company IR pages (pattern → homepage → LLM) |
 | `earnings/ir/parser.py` | Parse earnings datetime from IR pages (rule-based → LLM) |
 | `earnings/ir/cache.py` | JSON cache at `~/.pykabu_calendar/ir_cache.json` |
-| `core/fetch.py` | Thread-safe `get_session()`, `fetch()`, `fetch_browser()` |
+| `core/fetch.py` | Thread-safe `get_session()`, `fetch()`, resets sessions on `configure()` |
 | `core/parallel.py` | `run_parallel()` — ThreadPoolExecutor wrapper |
 | `core/io.py` | `export_to_csv()`, `export_to_parquet()`, `export_to_sqlite()`, `load_from_sqlite()` |
 | `core/parse.py` | `parse_table()`, `extract_regex()`, `to_datetime()`, `combine_datetime()` |
 | `llm/base.py` | Abstract `LLMClient` + `get_default_client()` singleton |
 | `llm/gemini.py` | `GeminiClient` with rate limiting |
+| `docs/dev/sbi-api.md` | SBI JSONP API documentation (moved from sources/) |
 
 ## Configuration
 
@@ -109,6 +112,9 @@ import pykabu_calendar as cal
 
 # Override settings at runtime
 cal.configure(llm_model="gemini-2.0-flash-lite", cache_ttl_days=7)
+
+# Control parallelism
+cal.configure(max_workers=8)
 
 # Inspect current settings
 cal.get_settings()
