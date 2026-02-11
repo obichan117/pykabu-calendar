@@ -11,7 +11,7 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-_CODE_PATTERN = re.compile(r"^\d{4}$")
+_CODE_PATTERN = re.compile(r"^[0-9A-Z]{4}$")
 
 
 def _next_weekday() -> date:
@@ -67,7 +67,7 @@ class EarningsSource(ABC):
 
         Validation:
         - ``code`` and ``datetime`` columns must exist.
-        - ``code`` coerced to ``str`` and validated against ``^[0-9A-Za-z]{4}$``.
+        - ``code`` coerced to ``str`` and validated against ``^[0-9A-Z]{4}$``.
         - ``datetime`` coerced via ``pd.to_datetime(errors="coerce")``.
         - Invalid rows dropped with a warning.
 

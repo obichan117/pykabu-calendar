@@ -77,6 +77,19 @@ class TestFetchValidation:
         assert len(result) == 1
         assert result.iloc[0]["code"] == "7203"
 
+    def test_alphanumeric_code_accepted(self, source):
+        """TSE alphanumeric codes like 167A should be accepted."""
+        source.set_data(pd.DataFrame({
+            "code": ["167A", "7203", "5765", "abcd"],
+            "name": ["Ryosan", "Toyota", "Test", "Lower"],
+            "datetime": ["2026-02-10 16:00", "2026-02-10 15:00",
+                         "2026-02-10 15:00", "2026-02-10 15:00"],
+        }))
+        result = source.fetch("2026-02-10")
+        assert len(result) == 3
+        assert "167A" in result["code"].values
+        assert "abcd" not in result["code"].values
+
     def test_code_coerced_to_string(self, source):
         """Numeric codes should be coerced to strings."""
         source.set_data(pd.DataFrame({

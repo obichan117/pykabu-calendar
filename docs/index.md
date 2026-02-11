@@ -55,6 +55,8 @@ cal.check_sources()
 | `code` | Stock code (e.g., "7203") |
 | `name` | Company name |
 | `datetime` | Best estimate datetime |
+| `confidence` | Confidence level: "highest", "high", "medium", or "low" |
+| `during_trading_hours` | Whether datetime falls within TSE trading hours |
 | `candidate_datetimes` | List of candidate datetimes (most likely first) |
 | `ir_datetime` | Datetime from company IR page |
 | `sbi_datetime` | Datetime from SBI (if available) |

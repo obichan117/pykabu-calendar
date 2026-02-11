@@ -28,9 +28,15 @@ cal.configure()
 |---------|---------|-------------|
 | `timeout` | `30` | HTTP request timeout (seconds) |
 | `user_agent` | Chrome 131 | User-Agent header |
+| `max_workers` | `4` | Thread pool size for parallel fetching |
+| `llm_provider` | `"gemini"` | LLM provider |
 | `llm_model` | `"gemini-2.0-flash"` | LLM model for IR parsing |
 | `llm_timeout` | `60.0` | LLM request timeout (seconds) |
-| `llm_provider` | `"gemini"` | LLM provider |
+| `llm_temperature` | `0.1` | LLM sampling temperature |
+| `llm_max_output_tokens` | `1024` | LLM max output tokens |
+| `llm_rate_limit_rpm` | `15` | LLM requests per minute limit |
+| `llm_find_link_max_chars` | `50000` | Max HTML chars sent to LLM for link discovery |
+| `llm_extract_datetime_max_chars` | `30000` | Max HTML chars sent to LLM for datetime extraction |
 | `cache_dir` | `"~/.pykabu_calendar"` | Cache directory |
 | `cache_ttl_days` | `30` | Cache TTL in days |
 

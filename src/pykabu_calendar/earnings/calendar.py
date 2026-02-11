@@ -68,6 +68,8 @@ def get_calendar(
         - code: Stock code
         - name: Company name
         - datetime: Best estimate datetime
+        - confidence: "highest", "high", "medium", or "low"
+        - during_trading_hours: Whether datetime falls within TSE trading hours
         - candidate_datetimes: List of candidate datetimes (most likely first)
         - ir_datetime: Datetime from company IR page (if available)
         - sbi_datetime: Datetime from SBI (if available)
@@ -132,8 +134,12 @@ def check_sources() -> list[dict]:
 
 
 def _empty_result() -> pd.DataFrame:
-    """Return empty DataFrame with correct schema."""
-    return pd.DataFrame(columns=OUTPUT_COLUMNS)
+    """Return empty DataFrame with correct schema and dtypes."""
+    df = pd.DataFrame(columns=OUTPUT_COLUMNS)
+    for col in df.columns:
+        if col.endswith("_datetime") or col == "datetime":
+            df[col] = pd.to_datetime(df[col])
+    return df
 
 
 def _merge_sources(source_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -159,6 +165,12 @@ def _merge_sources(source_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         if "name_dup" in merged.columns:
             merged["name"] = merged["name"].fillna(merged["name_dup"])
             merged = merged.drop(columns=["name_dup"])
+
+    # Enforce consistent dtypes after outer merge
+    merged["code"] = merged["code"].astype(str)
+    for col in merged.columns:
+        if col.endswith("_datetime"):
+            merged[col] = pd.to_datetime(merged[col], errors="coerce")
 
     return merged
 
@@ -190,7 +202,7 @@ def _add_history(df: pd.DataFrame, date: str, infer: bool = True) -> pd.DataFram
             past_list.append(None)
             inferred.append(pd.NaT)
 
-    df["inferred_datetime"] = inferred
+    df["inferred_datetime"] = pd.to_datetime(inferred, errors="coerce")
     df["past_datetimes"] = past_list
 
     return df
@@ -221,7 +233,7 @@ def _add_ir(
         if pd.notna(ir_dt):
             ir_found += 1
 
-    df["ir_datetime"] = ir_datetimes
+    df["ir_datetime"] = pd.to_datetime(ir_datetimes, errors="coerce")
     logger.info(f"[ir] Found {ir_found}/{len(df)} IR datetimes")
 
     return df
@@ -282,10 +294,10 @@ def _compute_confidence(
         or 2+ scrapers agree, "medium" if multiple scrapers disagree,
         "low" if single source only.
     """
-    if ir_val:
+    if ir_val is not None:
         return "highest"
 
-    if inferred and scrapers:
+    if inferred is not None and scrapers:
         inferred_time = inferred.strftime("%H:%M")
         for val in scrapers.values():
             if val.strftime("%H:%M") == inferred_time:
@@ -339,14 +351,14 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
         # Build ordered candidate list based on confidence
         candidates = []
 
-        if ir_val:
+        if ir_val is not None:
             candidates.append(ir_val)
             for col in available_cols:
                 if col != "ir_datetime" and col in values and values[col] not in candidates:
                     candidates.append(values[col])
             return candidates, candidates[0], confidence
 
-        if confidence == "high" and inferred and scrapers:
+        if confidence == "high" and inferred is not None and scrapers:
             inferred_time = inferred.strftime("%H:%M")
             for val in scrapers.values():
                 if val.strftime("%H:%M") == inferred_time:
@@ -378,7 +390,7 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
 
     results = df.apply(build_row_candidates, axis=1)
     df["candidate_datetimes"] = results.apply(lambda x: x[0])
-    df["datetime"] = results.apply(lambda x: x[1])
+    df["datetime"] = pd.to_datetime(results.apply(lambda x: x[1]), errors="coerce")
     df["confidence"] = results.apply(lambda x: x[2])
 
     return df

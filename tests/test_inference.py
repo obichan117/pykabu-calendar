@@ -68,20 +68,28 @@ class TestIsDuringTradingHours:
     """Tests for is_during_trading_hours."""
 
     def test_morning_session(self):
-        """9:00-11:30 should be trading hours."""
+        """9:00 (inclusive) to 11:30 (exclusive)."""
         assert is_during_trading_hours(pd.Timestamp("2026-02-10 09:00:00")) is True
         assert is_during_trading_hours(pd.Timestamp("2026-02-10 10:30:00")) is True
-        assert is_during_trading_hours(pd.Timestamp("2026-02-10 11:30:00")) is True
+        assert is_during_trading_hours(pd.Timestamp("2026-02-10 11:29:00")) is True
+
+    def test_morning_close_excluded(self):
+        """11:30 is NOT trading hours (session ended)."""
+        assert is_during_trading_hours(pd.Timestamp("2026-02-10 11:30:00")) is False
 
     def test_lunch_break(self):
-        """11:31-12:29 should not be trading hours."""
+        """11:30-12:29 should not be trading hours."""
         assert is_during_trading_hours(pd.Timestamp("2026-02-10 12:00:00")) is False
 
     def test_afternoon_session(self):
-        """12:30-15:30 should be trading hours."""
+        """12:30 (inclusive) to 15:30 (exclusive)."""
         assert is_during_trading_hours(pd.Timestamp("2026-02-10 12:30:00")) is True
         assert is_during_trading_hours(pd.Timestamp("2026-02-10 14:00:00")) is True
-        assert is_during_trading_hours(pd.Timestamp("2026-02-10 15:30:00")) is True
+        assert is_during_trading_hours(pd.Timestamp("2026-02-10 15:29:00")) is True
+
+    def test_afternoon_close_excluded(self):
+        """15:30 is NOT trading hours (session ended)."""
+        assert is_during_trading_hours(pd.Timestamp("2026-02-10 15:30:00")) is False
 
     def test_after_close(self):
         """After 15:30 should not be trading hours."""

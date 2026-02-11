@@ -123,6 +123,8 @@ for r in results:
 | `code` | Stock code (e.g., "7203") |
 | `name` | Company name |
 | `datetime` | Best guess announcement datetime |
+| `confidence` | Confidence level: "highest", "high", "medium", or "low" |
+| `during_trading_hours` | Whether datetime falls within TSE trading hours |
 | `candidate_datetimes` | List of candidate datetimes (most likely first) |
 | `ir_datetime` | Datetime from company IR page |
 | `sbi_datetime` | Datetime from SBI |

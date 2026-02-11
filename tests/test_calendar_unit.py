@@ -215,6 +215,76 @@ class TestBuildCandidates:
         assert result["confidence"].iloc[1] == "low"
 
 
+# --- dtype consistency ---
+
+class TestDtypeConsistency:
+    def test_merge_sources_datetime_dtype(self):
+        """All *_datetime columns should be datetime64 after merge."""
+        data = {
+            "sbi": _make_source_df(["7203"], ["Toyota"], ["2026-02-10 15:00"]),
+            "matsui": _make_source_df(["6758"], ["Sony"], ["2026-02-10 16:00"]),
+        }
+        result = _merge_sources(data)
+        assert pd.api.types.is_datetime64_any_dtype(result["sbi_datetime"])
+        assert pd.api.types.is_datetime64_any_dtype(result["matsui_datetime"])
+
+    def test_merge_sources_code_is_str(self):
+        """Code column should be str after outer merge."""
+        data = {
+            "sbi": _make_source_df(["7203"], ["Toyota"], ["2026-02-10 15:00"]),
+            "matsui": _make_source_df(["6758"], ["Sony"], ["2026-02-10 16:00"]),
+        }
+        result = _merge_sources(data)
+        assert result["code"].dtype == object
+        assert all(isinstance(c, str) for c in result["code"])
+
+    def test_build_candidates_datetime_dtype(self):
+        """Output datetime column should be datetime64, not object."""
+        df = pd.DataFrame({
+            "code": ["7203", "6758"],
+            "sbi_datetime": [pd.Timestamp("2026-02-10 15:00"), pd.NaT],
+            "matsui_datetime": [pd.NaT, pd.Timestamp("2026-02-10 16:00")],
+        })
+        result = _build_candidates(df)
+        assert pd.api.types.is_datetime64_any_dtype(result["datetime"])
+
+    def test_build_candidates_all_nat_datetime_dtype(self):
+        """Even when all values are NaT, datetime should be datetime64."""
+        df = pd.DataFrame({
+            "code": ["7203"],
+            "sbi_datetime": [pd.NaT],
+        })
+        result = _build_candidates(df)
+        assert pd.api.types.is_datetime64_any_dtype(result["datetime"])
+
+    def test_empty_result_datetime_dtypes(self):
+        """Empty result should have correct datetime dtypes."""
+        result = _empty_result()
+        assert pd.api.types.is_datetime64_any_dtype(result["datetime"])
+        assert pd.api.types.is_datetime64_any_dtype(result["ir_datetime"])
+        assert pd.api.types.is_datetime64_any_dtype(result["inferred_datetime"])
+
+    @patch("pykabu_calendar.earnings.calendar.run_parallel")
+    def test_get_calendar_dtype_consistency(self, mock_parallel):
+        """Full pipeline should produce consistent dtypes."""
+        source_df = _make_source_df(
+            ["7203", "6758"],
+            ["Toyota", "Sony"],
+            ["2026-02-10 15:00", None],
+        )
+        mock_parallel.return_value = {"matsui": source_df}
+
+        result = get_calendar(
+            "2026-02-10",
+            sources=["matsui"],
+            include_ir=False,
+            infer_from_history=False,
+        )
+        assert pd.api.types.is_datetime64_any_dtype(result["datetime"])
+        assert result["code"].dtype == object
+        assert all(isinstance(c, str) for c in result["code"])
+
+
 # --- check_sources ---
 
 class TestCheckSources:

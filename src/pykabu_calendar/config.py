@@ -2,7 +2,7 @@
 Shared configuration for all scrapers.
 
 This file contains ONLY shared settings used across all sources.
-Source-specific config lives in sources/{name}/config.py
+Source-specific config lives in sources/{name}.yaml
 
 Runtime configuration:
     import pykabu_calendar as cal

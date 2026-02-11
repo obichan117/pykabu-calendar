@@ -89,7 +89,7 @@ def infer_datetime(
     try:
         inferred_dt = pd.Timestamp(f"{date} {most_common_time}")
     except (ValueError, TypeError):
-        inferred_dt = None
+        inferred_dt = pd.NaT
         confidence = "none"
 
     return inferred_dt, confidence, past_datetimes
@@ -98,19 +98,19 @@ def infer_datetime(
 def is_during_trading_hours(dt: pd.Timestamp) -> bool:
     """Check if datetime is during trading hours (zaraba).
 
-    Trading hours:
-    - Morning: 9:00 - 11:30
-    - Afternoon: 12:30 - 15:30
+    Trading hours (open inclusive, close exclusive):
+    - Morning: 9:00 <= t < 11:30
+    - Afternoon: 12:30 <= t < 15:30
     """
     if pd.isna(dt):
         return False
 
     minutes = dt.hour * 60 + dt.minute
 
-    if _MORNING_OPEN <= minutes <= _MORNING_CLOSE:
+    if _MORNING_OPEN <= minutes < _MORNING_CLOSE:
         return True
 
-    if _AFTERNOON_OPEN <= minutes <= _AFTERNOON_CLOSE:
+    if _AFTERNOON_OPEN <= minutes < _AFTERNOON_CLOSE:
         return True
 
     return False

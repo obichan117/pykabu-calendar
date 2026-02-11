@@ -64,7 +64,7 @@ def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
 
     result["datetime"] = combine_datetime(result["_date"], result["_time"])
 
-    result = result[result["code"].str.match(r"^\w+$", na=False)]
+    result = result[result["code"].str.match(r"^[0-9A-Z]{4}$", na=False)]
 
     return result[["code", "name", "datetime"]]
 

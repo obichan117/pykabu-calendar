@@ -231,21 +231,21 @@ def get_past_earnings(code: str, n_recent: int = 8) -> list[pd.Timestamp]:
 ```python
 def infer_datetime(
     code: str,
-    target_date: str,
-    n_recent: int = 8,
+    date: str,
+    past_datetimes: list[pd.Timestamp] | None = None,
 ) -> tuple[pd.Timestamp | None, str, list[pd.Timestamp]]:
     """
     Infer earnings announcement datetime from historical patterns.
 
     Args:
         code: Stock code (e.g., "7203")
-        target_date: Target date in YYYY-MM-DD format
-        n_recent: Number of recent announcements to consider
+        date: Target date in YYYY-MM-DD format
+        past_datetimes: Optional pre-fetched past datetimes
 
     Returns:
         Tuple of (inferred_datetime, confidence, past_datetimes)
         - inferred_datetime: Predicted announcement time (or None)
-        - confidence: "high", "medium", or "low"
+        - confidence: "high", "medium", "low", or "none"
         - past_datetimes: List of past announcement times used
     """
 ```
@@ -257,7 +257,7 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
     """
     Check if a datetime is during Tokyo Stock Exchange trading hours.
 
-    Trading hours: 9:00-11:30, 12:30-15:00 JST
+    Trading hours: 9:00-11:30, 12:30-15:30 JST
 
     Args:
         dt: Datetime to check
@@ -274,6 +274,8 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
 | `code` | str | Stock code (e.g., "7203") |
 | `name` | str | Company name in Japanese |
 | `datetime` | datetime | Best estimate announcement datetime |
+| `confidence` | str | Confidence level: "highest", "high", "medium", or "low" |
+| `during_trading_hours` | bool | Whether datetime falls within TSE trading hours (9:00-11:30, 12:30-15:30) |
 | `candidate_datetimes` | list | List of candidate datetimes (most likely first) |
 | `ir_datetime` | datetime | Datetime from company IR page |
 | `sbi_datetime` | datetime | Datetime from SBI (if available) |
