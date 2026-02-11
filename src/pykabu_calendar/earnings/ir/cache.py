@@ -30,15 +30,10 @@ class CacheEntry:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CacheEntry":
         """Create CacheEntry from dictionary."""
-        return cls(
-            ir_url=data["ir_url"],
-            ir_type=data.get("ir_type", "unknown"),
-            last_updated=data["last_updated"],
-            discovered_via=data.get("discovered_via", "pattern"),
-            parse_pattern=data.get("parse_pattern"),
-            success_count=data.get("success_count", 1),
-            last_earnings_datetime=data.get("last_earnings_datetime"),
-        )
+        fields = {f.name for f in cls.__dataclass_fields__.values()}
+        known = {k: v for k, v in data.items() if k in fields}
+        known.setdefault("ir_type", "unknown")
+        return cls(**known)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""

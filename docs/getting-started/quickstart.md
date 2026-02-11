@@ -131,19 +131,15 @@ for r in results:
 | `inferred_datetime` | Datetime inferred from history |
 | `past_datetimes` | List of past earnings datetimes |
 
-## Using Individual Scrapers
+## Using Individual Sources
 
-You can also use individual scrapers directly:
+You can also use individual source classes directly:
 
 ```python
-import pykabu_calendar as cal
+from pykabu_calendar.earnings.sources import (
+    MatsuiEarningsSource, TraderswebEarningsSource, SBIEarningsSource,
+)
 
-# Matsui
-df_matsui = cal.get_matsui("2026-02-10")
-
-# Tradersweb
-df_tradersweb = cal.get_tradersweb("2026-02-10")
-
-# SBI
-df_sbi = cal.get_sbi("2026-02-10")
+matsui = MatsuiEarningsSource()
+df = matsui.fetch("2026-02-10")
 ```

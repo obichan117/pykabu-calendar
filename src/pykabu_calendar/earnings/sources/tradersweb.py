@@ -15,14 +15,6 @@ logger = logging.getLogger(__name__)
 
 _config = load_config(__file__)
 
-# Module-level constants for backward compatibility
-URL = _config["url"]
-TABLE_SELECTOR = _config["table_selector"]
-DATE_FORMAT = _config["date_format"]
-NAME_COLUMN_PATTERN = _config["name_column_pattern"]
-CODE_PATTERN = _config["code_pattern"]
-NAME_PATTERN = _config["name_pattern"]
-
 
 def build_url(date: str) -> str:
     """Build Tradersweb calendar URL.
@@ -34,7 +26,7 @@ def build_url(date: str) -> str:
         Full URL with query parameters
     """
     year, month, day = date.split("-")
-    return f"{URL}/all/all/1?term={year}/{month}/{day}"
+    return f"{_config['url']}/all/all/1?term={year}/{month}/{day}"
 
 
 def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
@@ -45,7 +37,7 @@ def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
     if "発表日" in raw_df.columns:
         result["_date"] = to_datetime(
             year + "/" + raw_df["発表日"].astype(str),
-            format=DATE_FORMAT,
+            format=_config["date_format"],
         )
     else:
         result["_date"] = pd.to_datetime(date)
@@ -57,14 +49,14 @@ def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
 
     name_col = None
     for col in raw_df.columns:
-        if NAME_COLUMN_PATTERN in col:
+        if _config["name_column_pattern"] in col:
             name_col = col
             break
 
     if name_col:
         col_data = raw_df[name_col]
-        result["name"] = extract_regex(col_data, NAME_PATTERN).str.strip()
-        result["code"] = extract_regex(col_data, CODE_PATTERN)
+        result["name"] = extract_regex(col_data, _config["name_pattern"]).str.strip()
+        result["code"] = extract_regex(col_data, _config["code_pattern"])
     else:
         result["name"] = None
         result["code"] = None
@@ -95,26 +87,9 @@ class TraderswebEarningsSource(EarningsSource):
             logger.error(f"Tradersweb request failed: {e}")
             return pd.DataFrame(columns=["code", "name", "datetime"])
 
-        df = parse_table(html, TABLE_SELECTOR)
+        df = parse_table(html, _config["table_selector"])
         if df.empty:
             logger.warning("Table not found or empty")
             return pd.DataFrame(columns=["code", "name", "datetime"])
 
         return _parse(df, date)
-
-
-# --- Backward-compat convenience function ---
-
-_source = TraderswebEarningsSource()
-
-
-def get_tradersweb(date: str) -> pd.DataFrame:
-    """Get earnings calendar from Tradersweb.
-
-    Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
-    """
-    return _source.fetch(date)

@@ -11,6 +11,17 @@ logger = logging.getLogger(__name__)
 _LIST_COLUMNS = ["candidate_datetimes", "past_datetimes"]
 
 
+def _prepare_export(df: pd.DataFrame) -> pd.DataFrame:
+    """Copy DataFrame and serialize list columns as semicolon-separated strings."""
+    out = df.copy()
+    for col in _LIST_COLUMNS:
+        if col in out.columns:
+            out[col] = out[col].apply(
+                lambda x: "; ".join(str(v) for v in x) if isinstance(x, list) else ""
+            )
+    return out
+
+
 def export_to_csv(df: pd.DataFrame, path: str) -> None:
     """Export calendar DataFrame to CSV.
 
@@ -21,15 +32,7 @@ def export_to_csv(df: pd.DataFrame, path: str) -> None:
         df: Calendar DataFrame.
         path: Output file path.
     """
-    export_df = df.copy()
-
-    for col in _LIST_COLUMNS:
-        if col in export_df.columns:
-            export_df[col] = export_df[col].apply(
-                lambda x: "; ".join(str(v) for v in x) if isinstance(x, list) else ""
-            )
-
-    export_df.to_csv(path, index=False, encoding="utf-8-sig")
+    _prepare_export(df).to_csv(path, index=False, encoding="utf-8-sig")
     logger.info(f"Exported {len(df)} entries to {path}")
 
 
@@ -40,15 +43,7 @@ def export_to_parquet(df: pd.DataFrame, path: str) -> None:
         df: Calendar DataFrame.
         path: Output file path (e.g. ``"earnings.parquet"``).
     """
-    # Convert list columns to string for parquet compatibility
-    export_df = df.copy()
-    for col in _LIST_COLUMNS:
-        if col in export_df.columns:
-            export_df[col] = export_df[col].apply(
-                lambda x: "; ".join(str(v) for v in x) if isinstance(x, list) else ""
-            )
-
-    export_df.to_parquet(path, index=False)
+    _prepare_export(df).to_parquet(path, index=False)
     logger.info(f"Exported {len(df)} entries to {path}")
 
 
@@ -64,15 +59,8 @@ def export_to_sqlite(
         path: Database file path (e.g. ``"earnings.db"``).
         table: Table name (default ``"earnings"``).
     """
-    export_df = df.copy()
-    for col in _LIST_COLUMNS:
-        if col in export_df.columns:
-            export_df[col] = export_df[col].apply(
-                lambda x: "; ".join(str(v) for v in x) if isinstance(x, list) else ""
-            )
-
     with sqlite3.connect(path) as conn:
-        export_df.to_sql(table, conn, if_exists="replace", index=False)
+        _prepare_export(df).to_sql(table, conn, if_exists="replace", index=False)
 
     logger.info(f"Exported {len(df)} entries to {path}:{table}")
 

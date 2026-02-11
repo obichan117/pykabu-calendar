@@ -6,10 +6,9 @@ from dataclasses import dataclass
 from datetime import datetime, time
 from enum import Enum
 
-import requests
 from bs4 import BeautifulSoup
 
-from ...core.fetch import fetch
+from ...core.fetch import fetch_safe
 from ...llm import LLMClient, get_default_client
 
 logger = logging.getLogger(__name__)
@@ -167,15 +166,6 @@ def _has_undetermined_marker(text: str) -> bool:
     return any(kw in text_lower for kw in UNDETERMINED_KEYWORDS)
 
 
-def _fetch_html(url: str, timeout: int | None = None) -> str | None:
-    """Fetch HTML from URL."""
-    try:
-        return fetch(url, timeout=timeout)
-    except requests.RequestException as e:
-        logger.debug(f"Failed to fetch {url}: {e}")
-        return None
-
-
 def _find_earnings_context(soup: BeautifulSoup, code: str | None = None) -> list[str]:
     """Find text blocks that likely contain earnings info.
 
@@ -294,7 +284,7 @@ def parse_earnings_datetime(
     logger.info(f"Parsing earnings datetime from {url}")
 
     # Fetch the page
-    html = _fetch_html(url, timeout=timeout)
+    html = fetch_safe(url, timeout=timeout)
     if not html:
         return None
 

@@ -5,12 +5,11 @@ from dataclasses import dataclass
 from enum import Enum
 from urllib.parse import urljoin
 
-import requests
 from bs4 import BeautifulSoup
 from pykabutan import Ticker
 
 from ...config import get_settings
-from ...core.fetch import fetch
+from ...core.fetch import fetch_safe, get_session
 from ...llm import LLMClient, get_default_client
 from .patterns import get_candidate_urls, extract_ir_keywords
 
@@ -51,27 +50,18 @@ def _check_url_exists(url: str, timeout: int | None = None) -> tuple[bool, str |
     Returns:
         Tuple of (exists, final_url after redirects)
     """
-    settings = get_settings()
     if timeout is None:
-        timeout = settings.timeout
+        timeout = get_settings().timeout
+    session = get_session()
     try:
-        response = requests.head(
-            url,
-            headers=settings.headers,
-            timeout=timeout,
-            allow_redirects=True,
-        )
+        response = session.head(url, timeout=timeout, allow_redirects=True)
         if response.status_code == 200:
             return True, response.url
 
         # Some servers don't support HEAD, try GET
         if response.status_code in (403, 405):
-            response = requests.get(
-                url,
-                headers=settings.headers,
-                timeout=timeout,
-                allow_redirects=True,
-                stream=True,  # Don't download body
+            response = session.get(
+                url, timeout=timeout, allow_redirects=True, stream=True,
             )
             response.close()
             if response.status_code == 200:
@@ -79,26 +69,9 @@ def _check_url_exists(url: str, timeout: int | None = None) -> tuple[bool, str |
 
         return False, None
 
-    except requests.RequestException as e:
+    except Exception as e:
         logger.debug(f"URL check failed for {url}: {e}")
         return False, None
-
-
-def _fetch_html(url: str, timeout: int | None = None) -> str | None:
-    """Fetch HTML content from a URL.
-
-    Args:
-        url: URL to fetch
-        timeout: Request timeout in seconds
-
-    Returns:
-        HTML content as string, or None if failed
-    """
-    try:
-        return fetch(url, timeout=timeout)
-    except requests.RequestException as e:
-        logger.debug(f"Failed to fetch {url}: {e}")
-        return None
 
 
 def _detect_page_type(url: str, html: str | None = None) -> IRPageType:
@@ -234,7 +207,7 @@ def discover_ir_page(
 
     # Step 2: Fetch homepage and search for IR link
     logger.debug(f"Pattern matching failed, searching homepage for IR link")
-    html = _fetch_html(website, timeout=timeout)
+    html = fetch_safe(website, timeout=timeout)
 
     if html:
         # Try rule-based link finding first

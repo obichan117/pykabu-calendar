@@ -214,7 +214,7 @@ def _add_ir(
         code_str = str(code)
         ir_dt = results.get(code_str, pd.NaT)
         ir_datetimes.append(ir_dt)
-        if ir_dt is not pd.NaT:
+        if pd.notna(ir_dt):
             ir_found += 1
 
     df["ir_datetime"] = ir_datetimes

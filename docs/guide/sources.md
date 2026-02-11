@@ -42,8 +42,8 @@ HTML-based scraper with pagination support.
 # Used by default
 df = cal.get_calendar("2026-02-10")
 
-# Or directly
-df = cal.get_matsui("2026-02-10")
+# Or use Matsui only
+df = cal.get_calendar("2026-02-10", sources=["matsui"])
 ```
 
 ## Tradersweb
@@ -59,8 +59,8 @@ Single-page HTML scraper.
 # Used by default
 df = cal.get_calendar("2026-02-10")
 
-# Or directly
-df = cal.get_tradersweb("2026-02-10")
+# Or use Tradersweb only
+df = cal.get_calendar("2026-02-10", sources=["tradersweb"])
 ```
 
 ## Historical Inference

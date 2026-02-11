@@ -7,9 +7,6 @@ Usage:
     # Get calendar for a specific date (uses all sources by default)
     df = cal.get_calendar("2026-02-10")
 
-    # Use specific sources only (faster, no browser needed)
-    df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
-
     # Include IR discovery (on by default)
     df = cal.get_calendar("2026-02-10", include_ir=True)
 
@@ -22,15 +19,16 @@ Usage:
     cal.check_sources()
 """
 
+from importlib.metadata import version as _get_version
+
 from .earnings.calendar import get_calendar, check_sources
 from .earnings.base import EarningsSource
 from .core.io import export_to_csv, export_to_parquet, export_to_sqlite, load_from_sqlite
 from .config import configure, get_settings
 from .earnings.inference import get_past_earnings, infer_datetime, is_during_trading_hours
-from .earnings.sources import get_matsui, get_sbi, get_tradersweb
 from .earnings.ir import discover_ir_page, parse_earnings_datetime
 
-__version__ = "0.7.0"
+__version__ = _get_version("pykabu-calendar")
 
 __all__ = [
     # Configuration
@@ -51,8 +49,4 @@ __all__ = [
     "get_past_earnings",
     "infer_datetime",
     "is_during_trading_hours",
-    # Individual scrapers
-    "get_matsui",
-    "get_sbi",
-    "get_tradersweb",
 ]

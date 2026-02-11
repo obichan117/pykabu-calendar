@@ -142,41 +142,46 @@ class TestFindIrLinkInHtml:
 class TestCheckUrlExists:
     """Tests for _check_url_exists function."""
 
-    @patch("pykabu_calendar.earnings.ir.discovery.requests.head")
-    def test_url_exists(self, mock_head):
+    @patch("pykabu_calendar.earnings.ir.discovery.get_session")
+    def test_url_exists(self, mock_get_session):
         """Test checking existing URL."""
+        mock_session = Mock()
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.url = "https://example.com/ir/"
-        mock_head.return_value = mock_response
+        mock_session.head.return_value = mock_response
+        mock_get_session.return_value = mock_session
 
         exists, final_url = _check_url_exists("https://example.com/ir/")
         assert exists is True
         assert final_url == "https://example.com/ir/"
 
-    @patch("pykabu_calendar.earnings.ir.discovery.requests.head")
-    def test_url_not_found(self, mock_head):
+    @patch("pykabu_calendar.earnings.ir.discovery.get_session")
+    def test_url_not_found(self, mock_get_session):
         """Test checking non-existent URL."""
+        mock_session = Mock()
         mock_response = Mock()
         mock_response.status_code = 404
-        mock_head.return_value = mock_response
+        mock_session.head.return_value = mock_response
+        mock_get_session.return_value = mock_session
 
         exists, final_url = _check_url_exists("https://example.com/missing/")
         assert exists is False
         assert final_url is None
 
-    @patch("pykabu_calendar.earnings.ir.discovery.requests.head")
-    @patch("pykabu_calendar.earnings.ir.discovery.requests.get")
-    def test_fallback_to_get(self, mock_get, mock_head):
+    @patch("pykabu_calendar.earnings.ir.discovery.get_session")
+    def test_fallback_to_get(self, mock_get_session):
         """Test fallback to GET when HEAD returns 403."""
+        mock_session = Mock()
         mock_head_response = Mock()
         mock_head_response.status_code = 403
-        mock_head.return_value = mock_head_response
+        mock_session.head.return_value = mock_head_response
 
         mock_get_response = Mock()
         mock_get_response.status_code = 200
         mock_get_response.url = "https://example.com/ir/"
-        mock_get.return_value = mock_get_response
+        mock_session.get.return_value = mock_get_response
+        mock_get_session.return_value = mock_session
 
         exists, final_url = _check_url_exists("https://example.com/ir/")
         assert exists is True
@@ -227,7 +232,7 @@ class TestDiscoverIrPage:
 
     @patch("pykabu_calendar.earnings.ir.discovery.Ticker")
     @patch("pykabu_calendar.earnings.ir.discovery._check_url_exists")
-    @patch("pykabu_calendar.earnings.ir.discovery._fetch_html")
+    @patch("pykabu_calendar.earnings.ir.discovery.fetch_safe")
     def test_discovers_via_homepage_link(self, mock_fetch, mock_check, mock_ticker):
         """Test discovering IR page via homepage link."""
         # Setup mock ticker

@@ -17,16 +17,6 @@ logger = logging.getLogger(__name__)
 
 _config = load_config(__file__)
 
-# Module-level constants for backward compatibility
-URL = _config["url"]
-TABLE_SELECTOR = _config["table_selector"]
-RESULT_SELECTOR = _config["result_selector"]
-DATE_FORMAT = _config["date_format"]
-NAME_CODE_COLUMN = _config["name_code_column"]
-CODE_PATTERN = _config["code_pattern"]
-NAME_PATTERN = _config["name_pattern"]
-PER_PAGE = _config["per_page"]
-
 
 def build_url(date: str, page: int = 1) -> str:
     """Build Matsui calendar URL.
@@ -39,7 +29,9 @@ def build_url(date: str, page: int = 1) -> str:
         Full URL with query parameters
     """
     year, month, day = date.split("-")
-    return f"{URL}?date={year}/{int(month)}/{int(day)}&page={page}&per_page={PER_PAGE}"
+    url = _config["url"]
+    per_page = _config["per_page"]
+    return f"{url}?date={year}/{int(month)}/{int(day)}&page={page}&per_page={per_page}"
 
 
 def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
@@ -47,7 +39,7 @@ def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
     result = pd.DataFrame()
 
     if "発表日" in raw_df.columns:
-        result["_date"] = to_datetime(raw_df["発表日"], format=DATE_FORMAT)
+        result["_date"] = to_datetime(raw_df["発表日"], format=_config["date_format"])
     else:
         result["_date"] = pd.to_datetime(date)
 
@@ -56,10 +48,11 @@ def _parse(raw_df: pd.DataFrame, date: str) -> pd.DataFrame:
     else:
         result["_time"] = pd.NA
 
-    if NAME_CODE_COLUMN in raw_df.columns:
-        col = raw_df[NAME_CODE_COLUMN]
-        result["name"] = extract_regex(col, NAME_PATTERN)
-        result["code"] = extract_regex(col, CODE_PATTERN)
+    name_code_column = _config["name_code_column"]
+    if name_code_column in raw_df.columns:
+        col = raw_df[name_code_column]
+        result["name"] = extract_regex(col, _config["name_pattern"])
+        result["code"] = extract_regex(col, _config["code_pattern"])
     else:
         result["name"] = None
         result["code"] = None
@@ -94,12 +87,12 @@ class MatsuiEarningsSource(EarningsSource):
 
             soup = BeautifulSoup(html, "lxml")
 
-            result_p = soup.select_one(RESULT_SELECTOR)
+            result_p = soup.select_one(_config["result_selector"])
             if result_p and "0件中" in result_p.text:
                 logger.info(f"No entries for {date}")
                 break
 
-            df = parse_table(html, TABLE_SELECTOR)
+            df = parse_table(html, _config["table_selector"])
             if df.empty:
                 break
 
@@ -122,20 +115,3 @@ class MatsuiEarningsSource(EarningsSource):
 
         raw_df = pd.concat(all_dfs, ignore_index=True)
         return _parse(raw_df, date)
-
-
-# --- Backward-compat convenience function ---
-
-_source = MatsuiEarningsSource()
-
-
-def get_matsui(date: str) -> pd.DataFrame:
-    """Get earnings calendar from Matsui Securities.
-
-    Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
-    """
-    return _source.fetch(date)

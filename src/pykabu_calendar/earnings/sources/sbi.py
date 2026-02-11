@@ -24,14 +24,6 @@ _config = load_config(__file__)
 
 _EMPTY_DF = pd.DataFrame(columns=["code", "name", "datetime"])
 
-# --- URL helpers (kept module-level for backward compatibility) ---
-
-PAGE_URL = _config["page_url"]
-PAGE_PARAMS = _config["page_params"]
-API_ENDPOINT = _config["api_endpoint"]
-HASH_PATTERN = _config["hash_pattern"]
-TIME_PATTERN = _config["time_pattern"]
-
 
 def build_url(date: str) -> str:
     """Build SBI calendar page URL (used to extract the hash parameter).
@@ -43,8 +35,8 @@ def build_url(date: str) -> str:
         Full page URL with query parameters
     """
     year, month, day = date.split("-")
-    params = PAGE_PARAMS.format(year=year, month=month, day=day)
-    return f"{PAGE_URL}?{params}"
+    params = _config["page_params"].format(year=year, month=month, day=day)
+    return f"{_config['page_url']}?{params}"
 
 
 def build_api_params(hash_value: str, date: str) -> dict:
@@ -75,7 +67,7 @@ def extract_hash(html: str) -> str | None:
     Returns:
         40-character hex hash string, or None if not found
     """
-    match = re.search(HASH_PATTERN, html)
+    match = re.search(_config["hash_pattern"], html)
     return match.group(1) if match else None
 
 
@@ -109,7 +101,7 @@ def _build_dataframe(items: list[dict], date: str) -> pd.DataFrame:
         if not code:
             continue
 
-        time_match = re.search(TIME_PATTERN, time_raw)
+        time_match = re.search(_config["time_pattern"], time_raw)
         if time_match:
             dt = pd.Timestamp(f"{date} {time_match.group(1)}")
         else:
@@ -147,7 +139,7 @@ class SBIEarningsSource(EarningsSource):
 
             params = build_api_params(hash_value, date)
             logger.debug(f"Calling SBI API with hash={hash_value[:8]}...")
-            jsonp_text = fetch(API_ENDPOINT, params=params)
+            jsonp_text = fetch(_config["api_endpoint"], params=params)
 
             items = _parse_jsonp(jsonp_text)
             if not items:
@@ -158,20 +150,3 @@ class SBIEarningsSource(EarningsSource):
         except Exception as e:
             logger.error(f"SBI scraping failed: {e}")
             return _EMPTY_DF.copy()
-
-
-# --- Backward-compat convenience function ---
-
-_source = SBIEarningsSource()
-
-
-def get_sbi(date: str) -> pd.DataFrame:
-    """Get earnings calendar from SBI Securities.
-
-    Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
-    """
-    return _source.fetch(date)

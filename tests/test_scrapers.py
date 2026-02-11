@@ -1,13 +1,14 @@
 """
 Tests for individual scrapers.
 
-All tests use live data - no mocks.
-Uses dynamic dates to ensure tests work regardless of when they're run.
+Unit tests (no network) for URL building and config.
+Integration tests (live data, marked slow) for actual fetching.
 """
 
 import pandas as pd
+import pytest
 
-from pykabu_calendar.earnings.sources import get_matsui, get_tradersweb, get_sbi
+from pykabu_calendar.earnings.sources import MatsuiEarningsSource, TraderswebEarningsSource, SBIEarningsSource
 from pykabu_calendar.config import get_settings
 from pykabu_calendar.earnings.sources.matsui import build_url as build_matsui_url
 from pykabu_calendar.earnings.sources.tradersweb import build_url as build_tradersweb_url
@@ -20,7 +21,7 @@ from conftest import get_test_date
 
 
 class TestConfig:
-    """Tests for scraper configuration."""
+    """Tests for scraper configuration (no network)."""
 
     def test_user_agent_is_modern(self):
         """User-Agent should be modern Chrome."""
@@ -53,60 +54,63 @@ class TestConfig:
         assert "202602" in url
 
 
+@pytest.mark.slow
 class TestMatsui:
-    """Tests for Matsui scraper."""
+    """Tests for Matsui scraper (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
 
     def test_code_is_string(self):
         """Code should be string type."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         if not df.empty:
             assert df["code"].dtype == object
 
     def test_returns_non_empty(self):
         """Should return non-empty DataFrame for valid date."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         assert len(df) > 0, f"Expected earnings data for {get_test_date()}"
 
 
+@pytest.mark.slow
 class TestTradersweb:
-    """Tests for Tradersweb scraper."""
+    """Tests for Tradersweb scraper (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_tradersweb(get_test_date())
+        df = TraderswebEarningsSource().fetch(get_test_date())
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = get_tradersweb(get_test_date())
+        df = TraderswebEarningsSource().fetch(get_test_date())
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
 
 
+@pytest.mark.slow
 class TestSbi:
-    """Tests for SBI scraper."""
+    """Tests for SBI scraper (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_sbi(get_test_date())
+        df = SBIEarningsSource().fetch(get_test_date())
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = get_sbi(get_test_date())
+        df = SBIEarningsSource().fetch(get_test_date())
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns

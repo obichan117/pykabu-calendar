@@ -8,13 +8,15 @@ Uses dynamic dates to ensure tests work regardless of when they're run.
 import pytest
 from datetime import datetime, timedelta
 
-from pykabu_calendar.earnings.sources.matsui import get_matsui
+from pykabu_calendar.earnings.sources import MatsuiEarningsSource
+
+_matsui = MatsuiEarningsSource()
 
 
 def pytest_configure(config):
     """Add custom markers."""
     config.addinivalue_line(
-        "markers", "slow: marks tests as slow (require browser automation)"
+        "markers", "slow: marks tests as slow (heavy network I/O: IR discovery, inference)"
     )
 
 
@@ -48,7 +50,7 @@ def find_date_with_earnings(max_days=30):
         target = today + timedelta(days=i)
         date_str = target.strftime("%Y-%m-%d")
         try:
-            df = get_matsui(date_str)
+            df = _matsui.fetch(date_str)
             if len(df) > 10:
                 return date_str
         except Exception:

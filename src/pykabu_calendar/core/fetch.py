@@ -60,3 +60,20 @@ def fetch(url: str, timeout: int | None = None, **kwargs) -> str:
     response.encoding = response.apparent_encoding
 
     return response.text
+
+
+def fetch_safe(url: str, timeout: int | None = None) -> str | None:
+    """Fetch URL content, returning None on failure instead of raising.
+
+    Args:
+        url: URL to fetch
+        timeout: Request timeout in seconds (default: from settings)
+
+    Returns:
+        HTML content as string, or None if request failed
+    """
+    try:
+        return fetch(url, timeout=timeout)
+    except requests.RequestException as e:
+        logger.debug(f"Failed to fetch {url}: {e}")
+        return None

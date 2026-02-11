@@ -37,7 +37,6 @@ dev = [
 ]
 llm = [
     "google-genai>=1.0.0",
-    "ollama>=0.1.0",
 ]
 all = [
     "pykabu-calendar[dev,llm]",

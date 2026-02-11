@@ -279,7 +279,7 @@ class TestParseEarningsFromHtml:
 class TestParseEarningsDatetime:
     """Tests for parse_earnings_datetime function."""
 
-    @patch("pykabu_calendar.earnings.ir.parser._fetch_html")
+    @patch("pykabu_calendar.earnings.ir.parser.fetch_safe")
     def test_parses_from_url(self, mock_fetch):
         """Test parsing from URL."""
         mock_fetch.return_value = """
@@ -294,7 +294,7 @@ class TestParseEarningsDatetime:
         assert result is not None
         assert result.datetime == datetime(2025, 2, 14, 15, 0)
 
-    @patch("pykabu_calendar.earnings.ir.parser._fetch_html")
+    @patch("pykabu_calendar.earnings.ir.parser.fetch_safe")
     def test_handles_fetch_failure(self, mock_fetch):
         """Test handling fetch failure."""
         mock_fetch.return_value = None

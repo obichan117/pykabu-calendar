@@ -9,8 +9,9 @@ def get_calendar(
     date: str,
     sources: list[str] | None = None,
     infer_from_history: bool = True,
-    include_ir: bool = False,
+    include_ir: bool = True,
     ir_eager: bool = False,
+    llm_client: LLMClient | None = None,
 ) -> pd.DataFrame:
     """
     Get aggregated earnings calendar for a target date.
@@ -19,8 +20,9 @@ def get_calendar(
         date: Date in YYYY-MM-DD format
         sources: List of sources to use. Default: all sources (sbi, matsui, tradersweb).
         infer_from_history: Whether to infer time from historical patterns
-        include_ir: Whether to enrich with company IR page data
+        include_ir: Whether to enrich with company IR page data (default True)
         ir_eager: Force IR re-discovery (bypass cache)
+        llm_client: Optional LLM client for IR discovery/parsing
 
     Returns:
         DataFrame with earnings calendar data
@@ -112,6 +114,62 @@ def load_from_sqlite(
     """
 ```
 
+## IR Discovery
+
+### discover_ir_page
+
+```python
+def discover_ir_page(
+    code: str,
+    llm_client: LLMClient | None = None,
+    use_llm_fallback: bool = True,
+    timeout: int | None = None,
+) -> IRPageInfo | None:
+    """
+    Discover the IR page for a company.
+
+    Flow:
+    1. Get company website from pykabutan
+    2. Try candidate URLs from common patterns
+    3. If not found, fetch homepage and search for IR link
+    4. If still not found and LLM enabled, use LLM to find link
+
+    Args:
+        code: Stock code (e.g., "7203")
+        llm_client: Optional LLM client for fallback discovery
+        use_llm_fallback: Whether to use LLM as fallback (default True)
+        timeout: Request timeout in seconds
+
+    Returns:
+        IRPageInfo if found, None otherwise
+    """
+```
+
+### parse_earnings_datetime
+
+```python
+def parse_earnings_datetime(
+    url: str,
+    code: str | None = None,
+    llm_client: LLMClient | None = None,
+    use_llm_fallback: bool = True,
+    timeout: int | None = None,
+) -> EarningsInfo | None:
+    """
+    Parse earnings announcement datetime from an IR page.
+
+    Args:
+        url: URL of the IR page
+        code: Optional stock code to help locate relevant info
+        llm_client: Optional LLM client for fallback parsing
+        use_llm_fallback: Whether to use LLM as fallback
+        timeout: Request timeout in seconds
+
+    Returns:
+        EarningsInfo if found, None otherwise
+    """
+```
+
 ## EarningsSource ABC
 
 ```python
@@ -146,53 +204,6 @@ class MySource(EarningsSource):
     def _fetch(self, date: str) -> pd.DataFrame:
         # Your scraping logic here
         return pd.DataFrame({"code": [...], "name": [...], "datetime": [...]})
-```
-
-## Individual Scrapers
-
-### get_matsui
-
-```python
-def get_matsui(date: str) -> pd.DataFrame:
-    """
-    Get earnings calendar from Matsui Securities.
-
-    Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
-    """
-```
-
-### get_tradersweb
-
-```python
-def get_tradersweb(date: str) -> pd.DataFrame:
-    """
-    Get earnings calendar from Tradersweb.
-
-    Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
-    """
-```
-
-### get_sbi
-
-```python
-def get_sbi(date: str) -> pd.DataFrame:
-    """
-    Get earnings calendar from SBI Securities via JSONP API.
-
-    Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
-    """
 ```
 
 ## Inference Functions

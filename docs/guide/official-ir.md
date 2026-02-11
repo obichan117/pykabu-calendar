@@ -1,42 +1,61 @@
-# Official IR Verification (Planned)
+# Official IR Verification
 
-!!! warning "Not Yet Implemented"
-    This feature is planned for a future release. The documentation below describes the intended design.
+The most accurate earnings datetime comes from company investor relations (IR) pages. pykabu-calendar discovers and parses official announcement times automatically.
 
-The most accurate earnings datetime comes from company investor relations (IR) pages. This feature would attempt to discover and parse official announcement times.
-
-## Planned Behavior
+## How It Works
 
 For each company in the calendar:
 
-1. **Check cache** - Skip if we already know this company's IR URL and policy
-2. **Check if significant** - Skip if time >= 15:30 (after-hours, doesn't affect trading)
-3. **Try pattern matching** - Look for common IR URL patterns
-4. **LLM fallback** - Use local LLM to discover IR page
-5. **Parse datetime** - Extract announcement time from IR page
-6. **Cache result** - Save URL and `publishes_time` policy for future
+1. **Check cache** - Skip if we already have a recent IR result for this company
+2. **Get company website** - Look up via pykabutan
+3. **Try pattern matching** - Check common IR URL patterns (`/ir/`, `/investor/`, `/ir/calendar/`)
+4. **Search homepage** - Parse the company homepage for IR links (rule-based)
+5. **LLM fallback** - Use Gemini to find the IR page link in the HTML
+6. **Parse datetime** - Extract announcement time from the IR page (rule-based, then LLM fallback)
+7. **Cache result** - Save URL and parsed datetime for future reuse
 
-## Trading Hours Optimization
+## Usage
 
-Only companies announcing during trading hours (zaraba) would be checked:
-
-| Session | Time |
-|---------|------|
-| Morning | 9:00 - 11:30 |
-| Afternoon | 12:30 - 15:00 |
-
-If the scraped time is after 15:30, official verification would be skipped since the exact time doesn't affect trading decisions.
-
-## Current Alternative
-
-For now, use historical inference which provides reasonably accurate predictions based on past patterns:
+IR discovery is enabled by default:
 
 ```python
 import pykabu_calendar as cal
 
-# Historical inference is enabled by default
+# IR is included by default
 df = cal.get_calendar("2026-02-10")
 
-# Check inferred datetime and past patterns
-print(df[["code", "name", "datetime", "inferred_datetime", "past_datetimes"]])
+# Disable IR for faster results
+df = cal.get_calendar("2026-02-10", include_ir=False)
+
+# Force re-discovery (bypass cache)
+df = cal.get_calendar("2026-02-10", ir_eager=True)
+```
+
+## Direct API
+
+You can also use the IR discovery and parsing functions directly:
+
+```python
+from pykabu_calendar import discover_ir_page, parse_earnings_datetime
+
+# Discover IR page for Toyota
+page_info = discover_ir_page("7203")
+if page_info:
+    print(f"IR page: {page_info.url}")
+    print(f"Type: {page_info.page_type.value}")
+    print(f"Found via: {page_info.discovered_via}")
+
+    # Parse earnings datetime from the page
+    earnings = parse_earnings_datetime(page_info.url, code="7203")
+    if earnings:
+        print(f"Earnings: {earnings.datetime}")
+        print(f"Confidence: {earnings.confidence.value}")
+```
+
+## Cache
+
+Discovered IR pages are cached at `~/.pykabu_calendar/ir_cache.json` to avoid repeated lookups. Cache TTL is configurable:
+
+```python
+cal.configure(cache_ttl_days=7)  # Cache for 7 days (default: 30)
 ```
