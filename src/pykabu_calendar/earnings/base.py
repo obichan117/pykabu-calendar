@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
+import requests
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -117,7 +118,7 @@ class EarningsSource(ABC):
             result["ok"] = len(df) >= min_rows
             if not result["ok"]:
                 result["error"] = f"Expected >= {min_rows} rows, got {len(df)}"
-        except Exception as e:
+        except (ValueError, RuntimeError, OSError, requests.RequestException) as e:
             result["error"] = str(e)
 
         return result

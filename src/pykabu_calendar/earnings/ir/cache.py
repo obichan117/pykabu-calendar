@@ -1,5 +1,6 @@
 """JSON cache for IR discovery results."""
 
+import dataclasses
 import json
 import logging
 import threading
@@ -31,7 +32,7 @@ class CacheEntry:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CacheEntry":
         """Create CacheEntry from dictionary."""
-        fields = {f.name for f in cls.__dataclass_fields__.values()}
+        fields = {f.name for f in dataclasses.fields(cls)}
         known = {k: v for k, v in data.items() if k in fields}
         # Deserialize ir_type string to enum
         ir_type_raw = known.pop("ir_type", "unknown")

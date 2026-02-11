@@ -17,16 +17,14 @@ from ..llm import LLMClient
 
 logger = logging.getLogger(__name__)
 
-# Source instances
-ALL_SOURCES = [
+# Source instances (tuple to prevent accidental mutation)
+ALL_SOURCES = (
     SBIEarningsSource(),
     MatsuiEarningsSource(),
     TraderswebEarningsSource(),
-]
+)
 
 SCRAPERS = {src.name: src for src in ALL_SOURCES}
-
-DEFAULT_SOURCES = ["sbi", "matsui", "tradersweb"]
 
 # Column order for output
 OUTPUT_COLUMNS = [
@@ -79,7 +77,7 @@ def get_calendar(
         - past_datetimes: List of past earnings datetimes
     """
     if sources is None:
-        sources = list(DEFAULT_SOURCES)
+        sources = list(SCRAPERS)
 
     logger.info(f"Getting calendar for {date} from sources: {sources}")
 
@@ -92,7 +90,7 @@ def get_calendar(
         src = SCRAPERS[source_name]
         tasks[source_name] = lambda s=src: s.fetch(date)
 
-    raw_results = run_parallel(tasks)
+    raw_results = run_parallel(tasks, max_workers=get_settings().max_workers)
 
     source_data = {}
     for name, df in raw_results.items():
@@ -125,12 +123,17 @@ def get_calendar(
 
 
 def check_sources() -> list[dict]:
-    """Run health checks on all configured sources.
+    """Run health checks on all configured sources (in parallel).
 
     Returns:
         List of dicts with ``name``, ``ok``, ``rows``, ``error`` for each source.
     """
-    return [src.check() for src in ALL_SOURCES]
+    sources = list(ALL_SOURCES)
+    if not sources:
+        return []
+    tasks = {src.name: (lambda s=src: s.check()) for src in sources}
+    results = run_parallel(tasks, max_workers=len(sources))
+    return [results[src.name] for src in sources]
 
 
 def _empty_result() -> pd.DataFrame:
@@ -294,10 +297,10 @@ def _compute_confidence(
         or 2+ scrapers agree, "medium" if multiple scrapers disagree,
         "low" if single source only.
     """
-    if ir_val is not None:
+    if ir_val is not None and pd.notna(ir_val):
         return "highest"
 
-    if inferred is not None and scrapers:
+    if inferred is not None and pd.notna(inferred) and scrapers:
         inferred_time = inferred.strftime("%H:%M")
         for val in scrapers.values():
             if val.strftime("%H:%M") == inferred_time:
@@ -351,14 +354,14 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
         # Build ordered candidate list based on confidence
         candidates = []
 
-        if ir_val is not None:
+        if ir_val is not None and pd.notna(ir_val):
             candidates.append(ir_val)
             for col in available_cols:
                 if col != "ir_datetime" and col in values and values[col] not in candidates:
                     candidates.append(values[col])
             return candidates, candidates[0], confidence
 
-        if confidence == "high" and inferred is not None and scrapers:
+        if confidence == "high" and inferred is not None and pd.notna(inferred) and scrapers:
             inferred_time = inferred.strftime("%H:%M")
             for val in scrapers.values():
                 if val.strftime("%H:%M") == inferred_time:

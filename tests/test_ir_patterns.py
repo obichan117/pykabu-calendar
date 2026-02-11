@@ -4,36 +4,36 @@ import pytest
 import requests
 
 from pykabu_calendar.earnings.ir import get_candidate_urls, IR_PATH_PATTERNS, CALENDAR_PATH_PATTERNS
-from pykabu_calendar.earnings.ir.patterns import normalize_base_url
+from pykabu_calendar.earnings.ir.patterns import _normalize_base_url
 
 
 class TestNormalizeBaseUrl:
-    """Tests for normalize_base_url function."""
+    """Tests for _normalize_base_url function."""
 
     def test_simple_url(self):
         """Test normalizing a simple URL."""
-        result = normalize_base_url("https://www.example.co.jp/")
+        result = _normalize_base_url("https://www.example.co.jp/")
         assert result == "https://www.example.co.jp"
 
     def test_url_with_path(self):
         """Test normalizing URL with path."""
-        result = normalize_base_url("https://www.example.co.jp/about/company/")
+        result = _normalize_base_url("https://www.example.co.jp/about/company/")
         assert result == "https://www.example.co.jp"
 
     def test_url_without_scheme(self):
         """Test normalizing URL without scheme."""
-        result = normalize_base_url("www.example.co.jp")
+        result = _normalize_base_url("www.example.co.jp")
         assert result == "https://www.example.co.jp"
 
     def test_http_url(self):
         """Test preserving http scheme."""
-        result = normalize_base_url("http://www.example.co.jp/")
+        result = _normalize_base_url("http://www.example.co.jp/")
         assert result == "http://www.example.co.jp"
 
     def test_empty_url(self):
         """Test handling empty URL."""
-        assert normalize_base_url("") == ""
-        assert normalize_base_url(None) == ""
+        assert _normalize_base_url("") == ""
+        assert _normalize_base_url(None) == ""
 
 
 class TestGetCandidateUrls:

@@ -1,6 +1,5 @@
 """Tests for IR page parser module."""
 
-import pytest
 from datetime import datetime, time
 from unittest.mock import Mock, patch
 
@@ -305,9 +304,8 @@ class TestParseEarningsDatetime:
         assert result is None
 
 
-@pytest.mark.slow
 class TestParseEarningsIntegration:
-    """Integration tests for parsing real IR pages."""
+    """Tests for parsing various date formats (no network required)."""
 
     def test_various_date_formats(self):
         """Test parsing various Japanese date formats."""

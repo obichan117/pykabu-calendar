@@ -223,25 +223,26 @@ class TestIRCache:
 class TestConvenienceFunctions:
     """Tests for convenience functions."""
 
-    @pytest.fixture
-    def temp_cache_dir(self, tmp_path):
-        """Set up temporary cache directory."""
-        # Reset global cache
+    @pytest.fixture(autouse=True)
+    def _reset_global_cache(self):
+        """Reset global cache before and after each test."""
         import pykabu_calendar.earnings.ir.cache as cache_module
         cache_module._global_cache = None
-        return tmp_path
+        yield
+        cache_module._global_cache = None
 
-    def test_get_cache(self, temp_cache_dir):
+    def test_get_cache(self, tmp_path):
         """Test get_cache function."""
-        cache = get_cache(cache_dir=temp_cache_dir)
+        cache = get_cache(cache_dir=tmp_path)
         assert isinstance(cache, IRCache)
-        assert cache.cache_dir == temp_cache_dir
+        assert cache.cache_dir == tmp_path
 
-    def test_save_and_get_cached(self, temp_cache_dir):
+    def test_save_and_get_cached(self, tmp_path):
         """Test save_cache and get_cached functions."""
-        # Reset global cache
         import pykabu_calendar.earnings.ir.cache as cache_module
-        cache_module._global_cache = None
+
+        # Set up global cache to point at tmp_path
+        cache_module._global_cache = IRCache(cache_dir=tmp_path)
 
         entry = save_cache(
             code="7203",
@@ -249,10 +250,6 @@ class TestConvenienceFunctions:
             ir_type=IRPageType.LANDING,
         )
         assert entry.ir_url == "https://example.com/ir/"
-
-        # Note: get_cached uses global cache, so we need to ensure same cache
-        cache_module._global_cache = IRCache(cache_dir=temp_cache_dir)
-        cache_module._global_cache.set("7203", "https://example.com/ir/", IRPageType.LANDING)
 
         result = get_cached("7203")
         assert result is not None

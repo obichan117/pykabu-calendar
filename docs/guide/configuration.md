@@ -49,32 +49,37 @@ Each data source has an adjacent YAML config file:
 ```yaml
 url: "https://finance.matsui.co.jp/find-by-schedule/index"
 table_selector: "table.m-table"
+result_selector: "p.m-table-utils-result"
 date_format: "%Y/%m/%d"
+name_code_column: "銘柄名(銘柄コード)"
+code_pattern: '\((\w+)\)'
+name_pattern: '^(.+?)\('
 per_page: 100
 health_check:
-  test_date: "2026-02-10"
   min_rows: 10
 ```
 
 ### Tradersweb (`earnings/sources/tradersweb.yaml`)
 
 ```yaml
-url: "https://www.traders.co.jp/stocks/earnings/calendar"
-table_selector: "table"
+url: "https://www.traders.co.jp/market_jp/earnings_calendar"
+table_selector: "table.data_table"
 date_format: "%Y/%m/%d"
+name_column_pattern: "銘柄名"
+code_pattern: '\((\w+)/'
+name_pattern: '^([^(]+)'
 health_check:
-  test_date: "2026-02-10"
   min_rows: 10
 ```
 
 ### SBI (`earnings/sources/sbi.yaml`)
 
 ```yaml
-page_url: "https://www.sbisec.co.jp/ETGate/..."
-api_endpoint: "https://www.sbisec.co.jp/ETGate/..."
-hash_pattern: "hashKey=(\\w+)"
+page_url: "https://www.sbisec.co.jp/ETGate/"
+api_endpoint: "https://vc.iris.sbisec.co.jp/calendar/settlement/stock/announcement_info_date.do"
+hash_pattern: 'hash=([a-f0-9]{40})'
+time_pattern: '(\d{1,2}:\d{2})'
 health_check:
-  test_date: "2026-02-10"
   min_rows: 10
 ```
 

@@ -61,7 +61,7 @@ def get_mysource(date: str) -> pd.DataFrame:
 
 The `EarningsSource.fetch()` method automatically validates your data:
 
-- **code**: Coerced to string, validated against `^[0-9A-Za-z]{4}$`
+- **code**: Coerced to string, validated against `^[0-9A-Z]{4}$`
 - **datetime**: Coerced via `pd.to_datetime(errors="coerce")`
 - Invalid rows are dropped with a warning
 

@@ -151,6 +151,82 @@ def _find_ir_link_in_html(html: str, base_url: str) -> str | None:
     return None
 
 
+def _try_pattern_discovery(
+    code: str, company_name: str | None, website: str, timeout: int | None,
+) -> IRPageInfo | None:
+    """Try to discover IR page via URL pattern matching."""
+    candidates = get_candidate_urls(website, include_calendar=True, include_ir_landing=True)
+    for url in candidates:
+        exists, final_url = _check_url_exists(url, timeout=timeout)
+        if exists and final_url:
+            page_type = _detect_page_type(final_url)
+            logger.info(f"Found IR page via pattern: {final_url}")
+            return IRPageInfo(
+                url=final_url,
+                page_type=page_type,
+                company_code=code,
+                company_name=company_name,
+                discovered_via="pattern",
+            )
+    return None
+
+
+def _try_homepage_discovery(
+    code: str, company_name: str | None, website: str, html: str, timeout: int | None,
+) -> IRPageInfo | None:
+    """Try to discover IR page by finding IR links in homepage HTML."""
+    ir_link = _find_ir_link_in_html(html, website)
+    if not ir_link:
+        return None
+
+    exists, final_url = _check_url_exists(ir_link, timeout=timeout)
+    if exists and final_url:
+        page_type = _detect_page_type(final_url)
+        logger.info(f"Found IR page via homepage link: {final_url}")
+        return IRPageInfo(
+            url=final_url,
+            page_type=page_type,
+            company_code=code,
+            company_name=company_name,
+            discovered_via="homepage_link",
+        )
+    return None
+
+
+def _try_llm_discovery(
+    code: str,
+    company_name: str | None,
+    website: str,
+    html: str,
+    llm_client: LLMClient | None,
+    timeout: int | None,
+) -> IRPageInfo | None:
+    """Try to discover IR page using LLM to find link in HTML."""
+    if llm_client is None:
+        llm_client = get_default_client()
+    if not llm_client:
+        return None
+
+    logger.debug("Using LLM to find IR link")
+    ir_link = llm_client.find_link(html, "IR page or Investor Relations page")
+    if not ir_link:
+        return None
+
+    full_url = urljoin(website, ir_link)
+    exists, final_url = _check_url_exists(full_url, timeout=timeout)
+    if exists and final_url:
+        page_type = _detect_page_type(final_url)
+        logger.info(f"Found IR page via LLM: {final_url}")
+        return IRPageInfo(
+            url=final_url,
+            page_type=page_type,
+            company_code=code,
+            company_name=company_name,
+            discovered_via="llm",
+        )
+    return None
+
+
 def discover_ir_page(
     code: str,
     llm_client: LLMClient | None = None,
@@ -174,13 +250,12 @@ def discover_ir_page(
     Returns:
         IRPageInfo if found, None otherwise
     """
-    # Get company info from pykabutan
     try:
         ticker = Ticker(code)
         profile = ticker.profile
         website = profile.website
         company_name = profile.name
-    except Exception as e:
+    except (ValueError, AttributeError, requests.RequestException) as e:
         logger.warning(f"Failed to get company info for {code}: {e}")
         return None
 
@@ -191,63 +266,26 @@ def discover_ir_page(
     logger.info(f"Discovering IR page for {code} ({company_name}): {website}")
 
     # Step 1: Try candidate URLs from patterns
-    candidates = get_candidate_urls(website, include_calendar=True, include_ir_landing=True)
-
-    for url in candidates:
-        exists, final_url = _check_url_exists(url, timeout=timeout)
-        if exists and final_url:
-            page_type = _detect_page_type(final_url)
-            logger.info(f"Found IR page via pattern: {final_url}")
-            return IRPageInfo(
-                url=final_url,
-                page_type=page_type,
-                company_code=code,
-                company_name=company_name,
-                discovered_via="pattern",
-            )
+    result = _try_pattern_discovery(code, company_name, website, timeout)
+    if result:
+        return result
 
     # Step 2: Fetch homepage and search for IR link
     logger.debug(f"Pattern matching failed, searching homepage for IR link")
     html = fetch_safe(website, timeout=timeout)
+    if not html:
+        logger.info(f"Could not discover IR page for {code}")
+        return None
 
-    if html:
-        # Try rule-based link finding first
-        ir_link = _find_ir_link_in_html(html, website)
-        if ir_link:
-            exists, final_url = _check_url_exists(ir_link, timeout=timeout)
-            if exists and final_url:
-                page_type = _detect_page_type(final_url)
-                logger.info(f"Found IR page via homepage link: {final_url}")
-                return IRPageInfo(
-                    url=final_url,
-                    page_type=page_type,
-                    company_code=code,
-                    company_name=company_name,
-                    discovered_via="homepage_link",
-                )
+    result = _try_homepage_discovery(code, company_name, website, html, timeout)
+    if result:
+        return result
 
-        # Step 3: Use LLM as fallback
-        if use_llm_fallback:
-            if llm_client is None:
-                llm_client = get_default_client()
-
-            if llm_client:
-                logger.debug("Using LLM to find IR link")
-                ir_link = llm_client.find_link(html, "IR page or Investor Relations page")
-                if ir_link:
-                    # Resolve relative URL
-                    full_url = urljoin(website, ir_link)
-                    exists, final_url = _check_url_exists(full_url, timeout=timeout)
-                    if exists and final_url:
-                        page_type = _detect_page_type(final_url)
-                        logger.info(f"Found IR page via LLM: {final_url}")
-                        return IRPageInfo(
-                            url=final_url,
-                            page_type=page_type,
-                            company_code=code,
-                            company_name=company_name,
-                            discovered_via="llm",
-                        )
+    # Step 3: Use LLM as fallback
+    if use_llm_fallback:
+        result = _try_llm_discovery(code, company_name, website, html, llm_client, timeout)
+        if result:
+            return result
 
     logger.info(f"Could not discover IR page for {code}")
     return None

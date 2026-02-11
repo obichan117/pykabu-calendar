@@ -31,6 +31,7 @@ from .earnings.ir import discover_ir_page, parse_earnings_datetime
 __version__ = _get_version("pykabu-calendar")
 
 __all__ = [
+    "__version__",
     # Configuration
     "configure",
     "get_settings",

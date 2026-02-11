@@ -16,6 +16,7 @@ import pandas as pd
 from pykabu_calendar.earnings.calendar import (
     _merge_sources,
     _build_candidates,
+    _compute_confidence,
     _empty_result,
     check_sources,
     get_calendar,
@@ -213,6 +214,54 @@ class TestBuildCandidates:
         result = _build_candidates(df)
         assert result["confidence"].iloc[0] == "highest"
         assert result["confidence"].iloc[1] == "low"
+
+
+# --- _compute_confidence ---
+
+class TestComputeConfidence:
+    """Direct tests for _compute_confidence function."""
+
+    def test_ir_is_highest(self):
+        assert _compute_confidence(pd.Timestamp("2026-02-10 15:00"), None, {}) == "highest"
+
+    def test_nat_ir_is_not_highest(self):
+        """pd.NaT should NOT be treated as valid IR datetime."""
+        assert _compute_confidence(pd.NaT, None, {}) != "highest"
+
+    def test_none_ir_is_not_highest(self):
+        assert _compute_confidence(None, None, {}) != "highest"
+
+    def test_inferred_matches_scraper_is_high(self):
+        scrapers = {"sbi_datetime": pd.Timestamp("2026-02-10 15:00")}
+        result = _compute_confidence(None, pd.Timestamp("2026-02-10 15:00"), scrapers)
+        assert result == "high"
+
+    def test_nat_inferred_not_high(self):
+        """pd.NaT inferred should not trigger 'high' confidence."""
+        scrapers = {"sbi_datetime": pd.Timestamp("2026-02-10 15:00")}
+        result = _compute_confidence(None, pd.NaT, scrapers)
+        assert result == "low"
+
+    def test_two_scrapers_agree_is_high(self):
+        scrapers = {
+            "sbi_datetime": pd.Timestamp("2026-02-10 15:00"),
+            "matsui_datetime": pd.Timestamp("2026-02-10 15:00"),
+        }
+        assert _compute_confidence(None, None, scrapers) == "high"
+
+    def test_two_scrapers_disagree_is_medium(self):
+        scrapers = {
+            "sbi_datetime": pd.Timestamp("2026-02-10 15:00"),
+            "matsui_datetime": pd.Timestamp("2026-02-10 16:00"),
+        }
+        assert _compute_confidence(None, None, scrapers) == "medium"
+
+    def test_single_scraper_is_low(self):
+        scrapers = {"sbi_datetime": pd.Timestamp("2026-02-10 15:00")}
+        assert _compute_confidence(None, None, scrapers) == "low"
+
+    def test_no_sources_is_low(self):
+        assert _compute_confidence(None, None, {}) == "low"
 
 
 # --- dtype consistency ---

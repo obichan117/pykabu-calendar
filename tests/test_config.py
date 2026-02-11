@@ -112,10 +112,10 @@ class TestSettingsPropagation:
         configure(llm_model="gemini-2.0-flash-lite")
         client_b = get_default_client()
 
-        # After reconfigure, a new instance should be created (not the same object)
-        if client_a is not None and client_b is not None:
-            assert client_a is not client_b
-        # If no API key, both are None — still valid (reset didn't crash)
+        if client_a is None or client_b is None:
+            pytest.skip("No GEMINI_API_KEY set — cannot verify singleton reset")
+
+        assert client_a is not client_b
 
     def test_configure_resets_cache_singleton(self):
         """configure() should reset the cache singleton so next call gets fresh instance."""

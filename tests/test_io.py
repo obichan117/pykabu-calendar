@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from pykabu_calendar.core.io import (
+    _validate_table_name,
     export_to_csv,
     export_to_parquet,
     export_to_sqlite,
@@ -147,3 +148,39 @@ class TestLoadFromSqlite:
         export_to_sqlite(sample_df, path)
         result = load_from_sqlite(path)
         assert len(result) == len(sample_df)
+
+
+class TestValidateTableName:
+    """Tests for SQL injection protection in _validate_table_name."""
+
+    def test_valid_names(self):
+        """Valid table names should not raise."""
+        _validate_table_name("earnings")
+        _validate_table_name("my_table")
+        _validate_table_name("_private")
+        _validate_table_name("Table123")
+
+    def test_sql_injection_semicolon(self):
+        """Table names with semicolons should be rejected."""
+        with pytest.raises(ValueError, match="Invalid table name"):
+            _validate_table_name("earnings; DROP TABLE users")
+
+    def test_sql_injection_quotes(self):
+        """Table names with quotes should be rejected."""
+        with pytest.raises(ValueError, match="Invalid table name"):
+            _validate_table_name("earnings' OR '1'='1")
+
+    def test_empty_string(self):
+        """Empty table name should be rejected."""
+        with pytest.raises(ValueError, match="Invalid table name"):
+            _validate_table_name("")
+
+    def test_starts_with_number(self):
+        """Table names starting with numbers should be rejected."""
+        with pytest.raises(ValueError, match="Invalid table name"):
+            _validate_table_name("123table")
+
+    def test_spaces(self):
+        """Table names with spaces should be rejected."""
+        with pytest.raises(ValueError, match="Invalid table name"):
+            _validate_table_name("my table")

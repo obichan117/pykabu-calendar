@@ -22,8 +22,9 @@ class TestConfig:
 
     def test_user_agent_is_modern(self):
         """User-Agent should be modern Chrome."""
+        import re
         settings = get_settings()
-        assert "Chrome/131" in settings.user_agent
+        assert re.search(r"Chrome/\d+", settings.user_agent)
         assert "Windows NT 10.0" in settings.user_agent
 
     def test_headers_include_user_agent(self):

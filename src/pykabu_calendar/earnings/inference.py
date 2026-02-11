@@ -52,7 +52,7 @@ def infer_datetime(
     code: str,
     date: str,
     past_datetimes: list[pd.Timestamp] | None = None,
-) -> tuple[pd.Timestamp | None, str, list[pd.Timestamp]]:
+) -> tuple[pd.Timestamp, str, list[pd.Timestamp]]:
     """Infer announcement datetime from historical patterns.
 
     Args:
@@ -70,7 +70,7 @@ def infer_datetime(
         past_datetimes = get_past_earnings(code)
 
     if not past_datetimes:
-        return None, "none", []
+        return pd.NaT, "none", []
 
     past_times = [dt.strftime("%H:%M") for dt in past_datetimes]
     unique_times = list(set(past_times))

@@ -51,7 +51,7 @@ CALENDAR_PATH_PATTERNS = [
 ]
 
 
-def normalize_base_url(url: str) -> str:
+def _normalize_base_url(url: str) -> str:
     """Normalize a company website URL to a base URL for pattern matching.
 
     Args:
@@ -92,7 +92,7 @@ def get_candidate_urls(
         return []
 
     # Normalize the base URL
-    normalized = normalize_base_url(base_url)
+    normalized = _normalize_base_url(base_url)
     if not normalized:
         return []
 

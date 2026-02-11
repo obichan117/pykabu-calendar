@@ -55,37 +55,43 @@ class GeminiClient(LLMClient):
         self.model = model if model is not None else settings.llm_model
         self.timeout = timeout if timeout is not None else settings.llm_timeout
         self._client: genai.Client | None = None
+        self._client_lock = Lock()
 
         # Rate limiting (from settings)
         self._last_request_time: float = 0.0
+        self._next_request_time: float = 0.0
         self._rate_lock = Lock()
         rpm = settings.llm_rate_limit_rpm
         self._min_request_interval = 60.0 / rpm if rpm > 0 else 0.0
 
     def _get_client(self) -> genai.Client:
-        """Get or create the Gemini client."""
+        """Get or create the Gemini client (thread-safe)."""
         if self._client is not None:
             return self._client
 
-        if not self.api_key:
-            raise ValueError(
-                "Gemini API key required. Set GEMINI_API_KEY environment variable "
-                "or pass api_key to GeminiClient."
-            )
+        with self._client_lock:
+            if self._client is not None:
+                return self._client
 
-        self._client = genai.Client(api_key=self.api_key)
-        return self._client
+            if not self.api_key:
+                raise ValueError(
+                    "Gemini API key required. Set GEMINI_API_KEY environment variable "
+                    "or pass api_key to GeminiClient."
+                )
+
+            self._client = genai.Client(api_key=self.api_key)
+            return self._client
 
     def _wait_for_rate_limit(self) -> None:
-        """Wait if needed to respect rate limits."""
+        """Wait if needed to respect rate limits (does not hold lock while sleeping)."""
         with self._rate_lock:
             now = time.time()
-            elapsed = now - self._last_request_time
-            if elapsed < self._min_request_interval:
-                wait_time = self._min_request_interval - elapsed
-                logger.debug(f"Rate limiting: waiting {wait_time:.2f}s")
-                time.sleep(wait_time)
-            self._last_request_time = time.time()
+            wait_time = max(0.0, self._next_request_time - now)
+            self._next_request_time = now + wait_time + self._min_request_interval
+
+        if wait_time > 0:
+            logger.debug(f"Rate limiting: waiting {wait_time:.2f}s")
+            time.sleep(wait_time)
 
     def complete(self, prompt: str, system: str | None = None) -> LLMResponse:
         """Send a prompt to Gemini and get a response.
