@@ -270,6 +270,36 @@ def _get_ir_datetime(
     return pd.Timestamp(earnings_info.datetime)
 
 
+def _compute_confidence(
+    ir_val: pd.Timestamp | None,
+    inferred: pd.Timestamp | None,
+    scrapers: dict[str, pd.Timestamp],
+) -> str:
+    """Compute confidence level based on source agreement.
+
+    Returns:
+        "highest" if IR data available, "high" if inferred matches scraper
+        or 2+ scrapers agree, "medium" if multiple scrapers disagree,
+        "low" if single source only.
+    """
+    if ir_val:
+        return "highest"
+
+    if inferred and scrapers:
+        inferred_time = inferred.strftime("%H:%M")
+        for val in scrapers.values():
+            if val.strftime("%H:%M") == inferred_time:
+                return "high"
+
+    if len(scrapers) >= 2:
+        times = [v.strftime("%H:%M") for v in scrapers.values()]
+        if len(times) != len(set(times)):
+            return "high"
+        return "medium"
+
+    return "low"
+
+
 def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
     """Build candidate_datetimes list and select best datetime.
 
@@ -291,10 +321,8 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
     scraper_cols = [c for c in available_cols if c not in ("ir_datetime", "inferred_datetime")]
 
     def build_row_candidates(row):
-        """Build candidate list, select best datetime, and compute confidence."""
-        candidates = []
+        """Build candidate list and select best datetime."""
         values = {}
-
         for col in available_cols:
             val = row.get(col)
             if pd.notna(val):
@@ -306,41 +334,39 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
         ir_val = values.get("ir_datetime")
         inferred = values.get("inferred_datetime")
         scrapers = {k: v for k, v in values.items() if k in scraper_cols}
+        confidence = _compute_confidence(ir_val, inferred, scrapers)
 
-        # --- Select best datetime and candidates ---
+        # Build ordered candidate list based on confidence
+        candidates = []
 
-        # IR datetime is highest priority (official source)
         if ir_val:
             candidates.append(ir_val)
             for col in available_cols:
                 if col != "ir_datetime" and col in values and values[col] not in candidates:
                     candidates.append(values[col])
-            return candidates, candidates[0], "highest"
+            return candidates, candidates[0], confidence
 
-        # Check if inferred matches any scraper (high confidence)
-        if inferred and scrapers:
+        if confidence == "high" and inferred and scrapers:
             inferred_time = inferred.strftime("%H:%M")
-            for col, val in scrapers.items():
+            for val in scrapers.values():
                 if val.strftime("%H:%M") == inferred_time:
                     candidates.append(inferred)
                     for other_val in scrapers.values():
                         if other_val not in candidates:
                             candidates.append(other_val)
-                    return candidates, candidates[0], "high"
+                    return candidates, candidates[0], confidence
 
-        # Check if 2+ scrapers agree on time
-        if len(scrapers) >= 2:
+        if confidence == "high" and len(scrapers) >= 2:
             scraper_times = {col: v.strftime("%H:%M") for col, v in scrapers.items()}
             time_groups: dict[str, list] = {}
             for col, t in scraper_times.items():
                 time_groups.setdefault(t, []).append(scrapers[col])
             largest_group = max(time_groups.values(), key=len)
-            if len(largest_group) >= 2:
-                candidates.extend(largest_group)
-                for v in values.values():
-                    if v not in candidates:
-                        candidates.append(v)
-                return candidates, candidates[0], "high"
+            candidates.extend(largest_group)
+            for v in values.values():
+                if v not in candidates:
+                    candidates.append(v)
+            return candidates, candidates[0], confidence
 
         # No agreement — use priority order
         priority = ["inferred_datetime", "sbi_datetime", "matsui_datetime", "tradersweb_datetime"]
@@ -348,7 +374,6 @@ def _build_candidates(df: pd.DataFrame) -> pd.DataFrame:
             if col in values:
                 candidates.append(values[col])
 
-        confidence = "medium" if len(scrapers) >= 2 else "low"
         return candidates, candidates[0] if candidates else pd.NaT, confidence
 
     results = df.apply(build_row_candidates, axis=1)

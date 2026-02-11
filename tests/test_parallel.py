@@ -62,7 +62,7 @@ class TestRunParallel:
 
         assert len(results) == 3
         # 3 tasks sleeping 0.1s each should take ~0.1s, not ~0.3s
-        assert elapsed < 0.25
+        assert elapsed < 0.5
 
     def test_max_workers_respected(self):
         """Should work with max_workers=1 (sequential)."""

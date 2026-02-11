@@ -89,24 +89,23 @@ def to_datetime(
 def combine_datetime(
     date_series: pd.Series,
     time_series: pd.Series,
-    default_time: str = "00:00",
 ) -> pd.Series:
     """
     Combine date and time series into datetime.
 
+    Rows where time is NaN produce NaT (not a default time).
+
     Args:
         date_series: Series of dates
         time_series: Series of times (can have NaN)
-        default_time: Default time for missing values
 
     Returns:
         Series of datetime values (NaT where time was unknown)
     """
-    time_filled = time_series.fillna(default_time).astype(str)
+    time_filled = time_series.fillna("00:00").astype(str)
     combined = pd.to_datetime(
         date_series.astype(str) + " " + time_filled,
         errors="coerce",
     )
-    # Set to NaT where original time was unknown
     combined = combined.where(time_series.notna(), pd.NaT)
     return combined

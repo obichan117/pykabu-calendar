@@ -92,6 +92,7 @@ class IRCache:
         self.ttl_days = ttl_days if ttl_days is not None else settings.cache_ttl_days
         self._cache: dict[str, CacheEntry] = {}
         self._loaded = False
+        self._lock = threading.Lock()
 
     @property
     def cache_path(self) -> Path:
@@ -151,17 +152,18 @@ class IRCache:
         Returns:
             CacheEntry if found and valid, None otherwise
         """
-        self._load()
+        with self._lock:
+            self._load()
 
-        entry = self._cache.get(code)
-        if entry is None:
-            return None
+            entry = self._cache.get(code)
+            if entry is None:
+                return None
 
-        if not ignore_expired and entry.is_expired(self.ttl_days):
-            logger.debug(f"Cache entry for {code} has expired")
-            return None
+            if not ignore_expired and entry.is_expired(self.ttl_days):
+                logger.debug(f"Cache entry for {code} has expired")
+                return None
 
-        return entry
+            return entry
 
     def set(
         self,
@@ -185,43 +187,44 @@ class IRCache:
         Returns:
             The created/updated CacheEntry
         """
-        self._load()
+        with self._lock:
+            self._load()
 
-        # Normalize ir_type to enum
-        if isinstance(ir_type, str):
-            try:
-                ir_type = IRPageType(ir_type)
-            except ValueError:
-                ir_type = IRPageType.UNKNOWN
+            # Normalize ir_type to enum
+            if isinstance(ir_type, str):
+                try:
+                    ir_type = IRPageType(ir_type)
+                except ValueError:
+                    ir_type = IRPageType.UNKNOWN
 
-        # Update existing entry or create new one
-        existing = self._cache.get(code)
-        if existing and existing.ir_url == ir_url:
-            # Update existing entry
-            existing.last_updated = datetime.now().isoformat()
-            existing.success_count += 1
-            if parse_pattern:
-                existing.parse_pattern = parse_pattern
-            if last_earnings_datetime:
-                existing.last_earnings_datetime = last_earnings_datetime.isoformat()
-            entry = existing
-        else:
-            # Create new entry
-            entry = CacheEntry(
-                ir_url=ir_url,
-                ir_type=ir_type,
-                last_updated=datetime.now().isoformat(),
-                discovered_via=discovered_via,
-                parse_pattern=parse_pattern,
-                success_count=1,
-                last_earnings_datetime=(
-                    last_earnings_datetime.isoformat() if last_earnings_datetime else None
-                ),
-            )
-            self._cache[code] = entry
+            # Update existing entry or create new one
+            existing = self._cache.get(code)
+            if existing and existing.ir_url == ir_url:
+                # Update existing entry
+                existing.last_updated = datetime.now().isoformat()
+                existing.success_count += 1
+                if parse_pattern:
+                    existing.parse_pattern = parse_pattern
+                if last_earnings_datetime:
+                    existing.last_earnings_datetime = last_earnings_datetime.isoformat()
+                entry = existing
+            else:
+                # Create new entry
+                entry = CacheEntry(
+                    ir_url=ir_url,
+                    ir_type=ir_type,
+                    last_updated=datetime.now().isoformat(),
+                    discovered_via=discovered_via,
+                    parse_pattern=parse_pattern,
+                    success_count=1,
+                    last_earnings_datetime=(
+                        last_earnings_datetime.isoformat() if last_earnings_datetime else None
+                    ),
+                )
+                self._cache[code] = entry
 
-        self._save()
-        return entry
+            self._save()
+            return entry
 
     def delete(self, code: str) -> bool:
         """Delete cache entry for a company.
@@ -232,13 +235,14 @@ class IRCache:
         Returns:
             True if entry was deleted, False if not found
         """
-        self._load()
+        with self._lock:
+            self._load()
 
-        if code in self._cache:
-            del self._cache[code]
-            self._save()
-            return True
-        return False
+            if code in self._cache:
+                del self._cache[code]
+                self._save()
+                return True
+            return False
 
     def clear(self) -> int:
         """Clear all cache entries.
@@ -246,11 +250,12 @@ class IRCache:
         Returns:
             Number of entries cleared
         """
-        self._load()
-        count = len(self._cache)
-        self._cache.clear()
-        self._save()
-        return count
+        with self._lock:
+            self._load()
+            count = len(self._cache)
+            self._cache.clear()
+            self._save()
+            return count
 
 
 

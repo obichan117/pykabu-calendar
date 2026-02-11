@@ -180,8 +180,7 @@ def discover_ir_page(
         profile = ticker.profile
         website = profile.website
         company_name = profile.name
-    except (ValueError, AttributeError, requests.RequestException) as e:
-        # pykabutan may raise various errors for invalid codes or network issues
+    except Exception as e:
         logger.warning(f"Failed to get company info for {code}: {e}")
         return None
 

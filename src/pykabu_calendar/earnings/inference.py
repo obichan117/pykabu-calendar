@@ -12,6 +12,16 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# Confidence thresholds for historical pattern inference
+_HIGH_CONFIDENCE_RATIO = 0.75
+_MEDIUM_CONFIDENCE_RATIO = 0.5
+
+# TSE trading session boundaries (minutes from midnight)
+_MORNING_OPEN = 540  # 9:00
+_MORNING_CLOSE = 690  # 11:30
+_AFTERNOON_OPEN = 750  # 12:30
+_AFTERNOON_CLOSE = 930  # 15:30
+
 
 def get_past_earnings(code: str, n_recent: int = 8) -> list[pd.Timestamp]:
     """Get past earnings announcement datetimes using pykabutan.
@@ -69,9 +79,9 @@ def infer_datetime(
     most_common_time, most_common_count = time_counts.most_common(1)[0]
     ratio = most_common_count / len(past_times)
 
-    if len(unique_times) == 1 or ratio >= 0.75:
+    if len(unique_times) == 1 or ratio >= _HIGH_CONFIDENCE_RATIO:
         confidence = "high"
-    elif ratio >= 0.5:
+    elif ratio >= _MEDIUM_CONFIDENCE_RATIO:
         confidence = "medium"
     else:
         confidence = "low"
@@ -97,10 +107,10 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
 
     minutes = dt.hour * 60 + dt.minute
 
-    if 540 <= minutes <= 690:
+    if _MORNING_OPEN <= minutes <= _MORNING_CLOSE:
         return True
 
-    if 750 <= minutes <= 930:
+    if _AFTERNOON_OPEN <= minutes <= _AFTERNOON_CLOSE:
         return True
 
     return False

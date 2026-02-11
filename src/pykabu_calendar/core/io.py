@@ -1,11 +1,21 @@
 """Export and import utilities for calendar DataFrames."""
 
 import logging
+import re
 import sqlite3
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+_SAFE_TABLE_NAME = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def _validate_table_name(table: str) -> None:
+    """Validate table name to prevent SQL injection."""
+    if not _SAFE_TABLE_NAME.match(table):
+        raise ValueError(f"Invalid table name: {table!r}")
+
 
 # Columns that contain Python lists and need special serialization
 _LIST_COLUMNS = ["candidate_datetimes", "past_datetimes"]
@@ -59,6 +69,7 @@ def export_to_sqlite(
         path: Database file path (e.g. ``"earnings.db"``).
         table: Table name (default ``"earnings"``).
     """
+    _validate_table_name(table)
     with sqlite3.connect(path) as conn:
         _prepare_export(df).to_sql(table, conn, if_exists="replace", index=False)
 
@@ -81,6 +92,7 @@ def load_from_sqlite(
     Returns:
         Calendar DataFrame.
     """
+    _validate_table_name(table)
     with sqlite3.connect(path) as conn:
         if date:
             query = f"SELECT * FROM [{table}] WHERE datetime LIKE ?"

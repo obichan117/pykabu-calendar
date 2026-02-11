@@ -154,13 +154,22 @@ cal.export_to_sqlite(df, "earnings.db")
 ## Testing Notes
 
 - Tests use **dynamic dates** (finds future weekday with earnings, skips weekends)
+- `conftest.py` has offline fallback — falls back to next weekday if Matsui is unreachable
 - Tradersweb blocks cloud IPs (Colab) - handled gracefully
 - SBI uses JSONP API (fast, no browser needed)
 - `@pytest.mark.slow` reserved for network-dependent integration tests
 - IR/LLM unit tests use mocks (fast, no network)
 - `test_calendar_unit.py` — fast unit tests for `_merge_sources`, `_build_candidates`, `check_sources`, confidence scoring
+- `test_calendar_integration.py` — slow integration tests with real network calls
 - Calendar integration tests pass `include_ir=False` for speed
 - Parquet tests skip if `pyarrow` not installed
+
+## Thread Safety
+
+- `IRCache` — instance-level `threading.Lock` protects `get()`, `set()`, `delete()`, `clear()`
+- `get_cache()` — global singleton access protected by `_global_cache_lock`
+- `core/fetch.py` — `_session_version` protected by `_version_lock`; per-thread sessions via `threading.local()`
+- `core/io.py` — `load_from_sqlite` validates table names against `^[a-zA-Z_][a-zA-Z0-9_]*$`
 
 ## Related Projects
 

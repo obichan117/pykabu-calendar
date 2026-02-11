@@ -16,12 +16,14 @@ logger = logging.getLogger(__name__)
 
 _thread_local = threading.local()
 _session_version = 0
+_version_lock = threading.Lock()
 
 
 def _reset_sessions() -> None:
     """Bump version so all threads create fresh sessions on next access."""
     global _session_version
-    _session_version += 1
+    with _version_lock:
+        _session_version += 1
 
 
 on_configure(_reset_sessions)
