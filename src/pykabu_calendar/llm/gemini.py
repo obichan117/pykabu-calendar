@@ -5,17 +5,18 @@ import os
 import time
 from threading import Lock
 
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    genai = None  # type: ignore[assignment]
+    types = None  # type: ignore[assignment]
 
 from ..config import get_settings
 from .base import LLMClient, LLMResponse
 
 logger = logging.getLogger(__name__)
 
-# Rate limiting for free tier: 15 RPM
-RATE_LIMIT_RPM = 15
-MIN_REQUEST_INTERVAL = 60.0 / RATE_LIMIT_RPM  # ~4 seconds
 
 
 class GeminiClient(LLMClient):
@@ -39,15 +40,23 @@ class GeminiClient(LLMClient):
             model: Model to use. If None, uses ``get_settings().llm_model``.
             timeout: Request timeout in seconds. If None, uses ``get_settings().llm_timeout``.
         """
+        if genai is None:
+            raise ImportError(
+                "google-genai is required for GeminiClient. "
+                "Install it with: pip install pykabu-calendar[llm]"
+            )
+
         settings = get_settings()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         self.model = model if model is not None else settings.llm_model
         self.timeout = timeout if timeout is not None else settings.llm_timeout
         self._client: genai.Client | None = None
 
-        # Rate limiting
+        # Rate limiting (from settings)
         self._last_request_time: float = 0.0
         self._rate_lock = Lock()
+        rpm = settings.llm_rate_limit_rpm
+        self._min_request_interval = 60.0 / rpm if rpm > 0 else 0.0
 
     def _get_client(self) -> genai.Client:
         """Get or create the Gemini client."""
@@ -68,8 +77,8 @@ class GeminiClient(LLMClient):
         with self._rate_lock:
             now = time.time()
             elapsed = now - self._last_request_time
-            if elapsed < MIN_REQUEST_INTERVAL:
-                wait_time = MIN_REQUEST_INTERVAL - elapsed
+            if elapsed < self._min_request_interval:
+                wait_time = self._min_request_interval - elapsed
                 logger.debug(f"Rate limiting: waiting {wait_time:.2f}s")
                 time.sleep(wait_time)
             self._last_request_time = time.time()
@@ -94,9 +103,10 @@ class GeminiClient(LLMClient):
 
         try:
             # Build generation config
+            settings = get_settings()
             config = types.GenerateContentConfig(
-                temperature=0.1,  # Low temp for factual extraction
-                max_output_tokens=1024,
+                temperature=settings.llm_temperature,
+                max_output_tokens=settings.llm_max_output_tokens,
                 system_instruction=system,
             )
 

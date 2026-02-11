@@ -1,0 +1,13 @@
+# Matsui Securities configuration
+
+url: "https://finance.matsui.co.jp/find-by-schedule/index"
+table_selector: "table.m-table"
+result_selector: "p.m-table-utils-result"
+date_format: "%Y/%m/%d"
+name_code_column: "銘柄名(銘柄コード)"
+code_pattern: '\((\w+)\)'
+name_pattern: '^(.+?)\('
+per_page: 100
+
+health_check:
+  min_rows: 10

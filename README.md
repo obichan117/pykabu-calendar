@@ -10,12 +10,6 @@ Japanese earnings calendar aggregator.
 pip install pykabu-calendar
 ```
 
-For SBI scraping (requires browser):
-```bash
-pip install pykabu-calendar
-pip install playwright && playwright install chromium
-```
-
 ## Quick Start
 
 ```python
@@ -24,7 +18,7 @@ import pykabu_calendar as cal
 # Get earnings calendar (uses all sources by default)
 df = cal.get_calendar("2026-02-10")
 
-# Use specific sources only (faster, no browser needed)
+# Use specific sources only
 df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
 # Without historical inference (faster)
@@ -32,6 +26,18 @@ df = cal.get_calendar("2026-02-10", infer_from_history=False)
 
 # Export to CSV
 cal.export_to_csv(df, "earnings.csv")
+
+# Export to Parquet (requires pyarrow)
+cal.export_to_parquet(df, "earnings.parquet")
+
+# Export to SQLite
+cal.export_to_sqlite(df, "earnings.db")
+
+# Load back from SQLite
+df = cal.load_from_sqlite("earnings.db", date="2026-02-10")
+
+# Health check all data sources
+cal.check_sources()
 ```
 
 ## Output Columns
@@ -42,7 +48,8 @@ cal.export_to_csv(df, "earnings.csv")
 | `name` | Company name |
 | `datetime` | Best estimate datetime |
 | `candidate_datetimes` | List of candidate datetimes (most likely first) |
-| `sbi_datetime` | Datetime from SBI (if available) |
+| `ir_datetime` | Datetime from company IR page |
+| `sbi_datetime` | Datetime from SBI |
 | `matsui_datetime` | Datetime from Matsui |
 | `tradersweb_datetime` | Datetime from Tradersweb |
 | `inferred_datetime` | Datetime inferred from history |
@@ -51,17 +58,21 @@ cal.export_to_csv(df, "earnings.csv")
 ## Features
 
 - Aggregates earnings calendars from SBI, Matsui, Tradersweb
+- Discovers company IR pages and extracts exact announcement times
 - Infers announcement time from historical patterns (via pykabutan)
-- Centralized URL configuration for easy maintenance
-- Modern User-Agent for reliable scraping
-- Exports to CSV (Google Sheets compatible)
+- Parallel source fetching for faster results
+- Source health checks via `check_sources()`
+- YAML-based source configuration for easy maintenance
+- Exports to CSV, Parquet, and SQLite
+- EarningsSource ABC for adding custom sources
 
 ## Data Source Priority
 
-1. **Inferred + Source match** - When inferred time matches a source
+1. **IR page** - Company's official IR page (most accurate)
 2. **Inferred** - From historical patterns
-3. **SBI** - Primary public source (requires Playwright)
-4. **Matsui/Tradersweb** - Lightweight sources (default)
+3. **SBI** - SBI Securities (JSONP API)
+4. **Matsui** - Matsui Securities
+5. **Tradersweb** - Tradersweb
 
 ## Documentation
 

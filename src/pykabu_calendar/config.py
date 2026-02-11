@@ -13,6 +13,19 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from pathlib import Path
+
+import yaml
+
+
+def _load_defaults() -> dict:
+    """Load default values from config.yaml."""
+    config_path = Path(__file__).parent / "config.yaml"
+    with open(config_path) as f:
+        return yaml.safe_load(f)
+
+
+_DEFAULTS = _load_defaults()
 
 
 @dataclass(frozen=True)
@@ -24,21 +37,25 @@ class Settings:
     """
 
     # HTTP
-    timeout: int = 30
-    user_agent: str = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131.0.0.0 Safari/537.36"
-    )
+    timeout: int = _DEFAULTS["timeout"]
+    user_agent: str = _DEFAULTS["user_agent"]
+
+    # Parallelism
+    max_workers: int = _DEFAULTS["max_workers"]
 
     # LLM
-    llm_provider: str = "gemini"
-    llm_model: str = "gemini-2.0-flash"
-    llm_timeout: float = 60.0
+    llm_provider: str = _DEFAULTS["llm_provider"]
+    llm_model: str = _DEFAULTS["llm_model"]
+    llm_timeout: float = _DEFAULTS["llm_timeout"]
+    llm_temperature: float = _DEFAULTS["llm_temperature"]
+    llm_max_output_tokens: int = _DEFAULTS["llm_max_output_tokens"]
+    llm_rate_limit_rpm: int = _DEFAULTS["llm_rate_limit_rpm"]
+    llm_find_link_max_chars: int = _DEFAULTS["llm_find_link_max_chars"]
+    llm_extract_datetime_max_chars: int = _DEFAULTS["llm_extract_datetime_max_chars"]
 
     # Cache
-    cache_dir: str = "~/.pykabu_calendar"
-    cache_ttl_days: int = 30
+    cache_dir: str = _DEFAULTS["cache_dir"]
+    cache_ttl_days: int = _DEFAULTS["cache_ttl_days"]
 
     @property
     def headers(self) -> dict[str, str]:
@@ -96,19 +113,3 @@ def on_configure(hook: Callable[[], None]) -> None:
     themselves when settings change.  Not part of the public API.
     """
     _on_configure_hooks.append(hook)
-
-
-# ---------------------------------------------------------------------------
-# Backward-compatible module-level constants
-# Existing code does ``from ..config import TIMEOUT, HEADERS``
-# These are kept as simple names that resolve on import.
-# ---------------------------------------------------------------------------
-
-# Modern Chrome User-Agent (update periodically)
-USER_AGENT = Settings().user_agent
-
-# Default request timeout in seconds
-TIMEOUT = Settings().timeout
-
-# Default request headers
-HEADERS = Settings().headers

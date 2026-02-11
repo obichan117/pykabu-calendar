@@ -3,7 +3,7 @@
 import os
 import pytest
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from pykabu_calendar.llm import LLMClient, LLMResponse, GeminiClient
 

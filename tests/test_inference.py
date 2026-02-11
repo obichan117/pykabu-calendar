@@ -5,10 +5,10 @@ All tests use live data - no mocks.
 Uses dynamic dates to ensure tests work regardless of when they're run.
 """
 
-import pytest
 import pandas as pd
+import pytest
 
-from pykabu_calendar.inference import (
+from pykabu_calendar.earnings.inference import (
     get_past_earnings,
     infer_datetime,
     is_during_trading_hours,
@@ -24,6 +24,7 @@ from conftest import get_test_date
 TEST_CODES = ["7203", "6758", "9984"]  # Toyota, Sony, SoftBank
 
 
+@pytest.mark.slow
 class TestGetPastEarnings:
     """Tests for get_past_earnings."""
 
@@ -45,6 +46,7 @@ class TestGetPastEarnings:
         assert isinstance(times, list)
 
 
+@pytest.mark.slow
 class TestInferDatetime:
     """Tests for infer_datetime."""
 

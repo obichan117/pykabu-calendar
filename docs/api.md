@@ -9,6 +9,9 @@ def get_calendar(
     date: str,
     sources: list[str] | None = None,
     infer_from_history: bool = True,
+    include_ir: bool = True,
+    ir_eager: bool = False,
+    llm_client: LLMClient | None = None,
 ) -> pd.DataFrame:
     """
     Get aggregated earnings calendar for a target date.
@@ -16,11 +19,28 @@ def get_calendar(
     Args:
         date: Date in YYYY-MM-DD format
         sources: List of sources to use. Default: all sources (sbi, matsui, tradersweb).
-                 Note: SBI requires Playwright and may be slower than other sources.
         infer_from_history: Whether to infer time from historical patterns
+        include_ir: Whether to enrich with company IR page data (default True)
+        ir_eager: Force IR re-discovery (bypass cache)
+        llm_client: Optional LLM client for IR discovery/parsing
 
     Returns:
         DataFrame with earnings calendar data
+    """
+```
+
+### check_sources
+
+```python
+def check_sources() -> list[dict]:
+    """
+    Health check all registered earnings sources.
+
+    Each source uses its YAML config's health_check section
+    (test_date and min_rows) to validate.
+
+    Returns:
+        List of dicts with keys: name, ok, rows, error
     """
 ```
 
@@ -31,59 +51,159 @@ def export_to_csv(df: pd.DataFrame, path: str) -> None:
     """
     Export calendar to CSV with proper encoding for Excel/Google Sheets.
 
+    List columns are serialized as semicolon-separated strings.
+    Uses utf-8-sig encoding.
+
     Args:
         df: Calendar DataFrame
         path: Output file path
     """
 ```
 
-## Individual Scrapers
-
-### get_matsui
+### export_to_parquet
 
 ```python
-def get_matsui(date: str) -> pd.DataFrame:
+def export_to_parquet(df: pd.DataFrame, path: str) -> None:
     """
-    Get earnings calendar from Matsui Securities.
+    Export calendar to Parquet format.
+
+    Requires pyarrow or fastparquet.
 
     Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
+        df: Calendar DataFrame
+        path: Output file path
     """
 ```
 
-### get_tradersweb
+### export_to_sqlite
 
 ```python
-def get_tradersweb(date: str) -> pd.DataFrame:
+def export_to_sqlite(
+    df: pd.DataFrame,
+    path: str,
+    table: str = "earnings",
+) -> None:
     """
-    Get earnings calendar from Tradersweb.
+    Export calendar to SQLite database.
 
     Args:
-        date: Target date in YYYY-MM-DD format
-
-    Returns:
-        DataFrame with columns: [code, name, datetime]
+        df: Calendar DataFrame
+        path: Database file path
+        table: Table name (default: "earnings")
     """
 ```
 
-### get_sbi
+### load_from_sqlite
 
 ```python
-def get_sbi(date: str) -> pd.DataFrame:
+def load_from_sqlite(
+    path: str,
+    table: str = "earnings",
+    date: str | None = None,
+) -> pd.DataFrame:
     """
-    Get earnings calendar from SBI Securities.
-
-    Requires Playwright: pip install playwright && playwright install chromium
+    Load calendar from SQLite database.
 
     Args:
-        date: Target date in YYYY-MM-DD format
+        path: Database file path
+        table: Table name (default: "earnings")
+        date: Optional date filter (YYYY-MM-DD)
 
     Returns:
-        DataFrame with columns: [code, name, datetime]
+        Calendar DataFrame
     """
+```
+
+## IR Discovery
+
+### discover_ir_page
+
+```python
+def discover_ir_page(
+    code: str,
+    llm_client: LLMClient | None = None,
+    use_llm_fallback: bool = True,
+    timeout: int | None = None,
+) -> IRPageInfo | None:
+    """
+    Discover the IR page for a company.
+
+    Flow:
+    1. Get company website from pykabutan
+    2. Try candidate URLs from common patterns
+    3. If not found, fetch homepage and search for IR link
+    4. If still not found and LLM enabled, use LLM to find link
+
+    Args:
+        code: Stock code (e.g., "7203")
+        llm_client: Optional LLM client for fallback discovery
+        use_llm_fallback: Whether to use LLM as fallback (default True)
+        timeout: Request timeout in seconds
+
+    Returns:
+        IRPageInfo if found, None otherwise
+    """
+```
+
+### parse_earnings_datetime
+
+```python
+def parse_earnings_datetime(
+    url: str,
+    code: str | None = None,
+    llm_client: LLMClient | None = None,
+    use_llm_fallback: bool = True,
+    timeout: int | None = None,
+) -> EarningsInfo | None:
+    """
+    Parse earnings announcement datetime from an IR page.
+
+    Args:
+        url: URL of the IR page
+        code: Optional stock code to help locate relevant info
+        llm_client: Optional LLM client for fallback parsing
+        use_llm_fallback: Whether to use LLM as fallback
+        timeout: Request timeout in seconds
+
+    Returns:
+        EarningsInfo if found, None otherwise
+    """
+```
+
+## EarningsSource ABC
+
+```python
+class EarningsSource(ABC):
+    """
+    Abstract base class for earnings calendar sources.
+
+    Subclass this to add a custom source.
+
+    Properties:
+        name: Short lowercase identifier (e.g., "sbi")
+
+    Methods:
+        fetch(date): Fetch and validate earnings data
+        check(): Health check using YAML config
+    """
+```
+
+### Adding a Custom Source
+
+```python
+from pykabu_calendar.earnings.base import EarningsSource, load_config
+
+class MySource(EarningsSource):
+    def __init__(self):
+        self._config = load_config(__file__)
+
+    @property
+    def name(self) -> str:
+        return "mysource"
+
+    def _fetch(self, date: str) -> pd.DataFrame:
+        # Your scraping logic here
+        return pd.DataFrame({"code": [...], "name": [...], "datetime": [...]})
 ```
 
 ## Inference Functions
@@ -155,6 +275,7 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
 | `name` | str | Company name in Japanese |
 | `datetime` | datetime | Best estimate announcement datetime |
 | `candidate_datetimes` | list | List of candidate datetimes (most likely first) |
+| `ir_datetime` | datetime | Datetime from company IR page |
 | `sbi_datetime` | datetime | Datetime from SBI (if available) |
 | `matsui_datetime` | datetime | Datetime from Matsui |
 | `tradersweb_datetime` | datetime | Datetime from Tradersweb |
@@ -163,8 +284,9 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
 
 ## Datetime Selection Priority
 
-1. **Inferred + Source match** - When inferred time matches a source (high confidence)
-2. **Inferred** - From historical patterns
-3. **SBI** - Primary public source (requires Playwright)
-4. **Matsui** - Lightweight source
-5. **Tradersweb** - Lightweight source
+1. **Company IR page** - Official IR page (most accurate)
+2. **Inferred + Source match** - When inferred time matches a source (high confidence)
+3. **Inferred** - From historical patterns
+4. **SBI** - JSONP API source
+5. **Matsui** - Lightweight source
+6. **Tradersweb** - Lightweight source

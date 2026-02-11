@@ -1,12 +1,11 @@
 """
 Tests for calendar aggregator.
 
-All tests use live data - no mocks.
-Uses dynamic dates to ensure tests work regardless of when they're run.
+Integration tests (live network) are marked @pytest.mark.slow.
 """
 
-import pytest
 import pandas as pd
+import pytest
 
 from pykabu_calendar import get_calendar, export_to_csv
 
@@ -16,8 +15,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 from conftest import get_test_date
 
 
+@pytest.mark.slow
 class TestGetCalendar:
-    """Tests for get_calendar function."""
+    """Tests for get_calendar function (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
@@ -35,7 +35,6 @@ class TestGetCalendar:
     def test_has_source_datetime_columns(self):
         """Should have source-specific datetime columns."""
         df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
-        # Default sources are matsui and tradersweb
         assert "matsui_datetime" in df.columns
         assert "tradersweb_datetime" in df.columns
 
@@ -73,7 +72,6 @@ class TestGetCalendar:
         """candidate_datetimes should contain lists."""
         df = get_calendar(get_test_date(), infer_from_history=False, include_ir=False)
         if not df.empty:
-            # Get first non-empty candidate list
             for val in df["candidate_datetimes"]:
                 if val:
                     assert isinstance(val, list)
@@ -83,7 +81,6 @@ class TestGetCalendar:
         """past_datetimes should contain lists when inference is enabled."""
         df = get_calendar(get_test_date(), infer_from_history=True, include_ir=False)
         if not df.empty:
-            # Check that at least some rows have past_datetimes
             non_null = df["past_datetimes"].dropna()
             if not non_null.empty:
                 val = non_null.iloc[0]
@@ -95,8 +92,9 @@ class TestGetCalendar:
         assert len(df) > 0, f"Expected earnings data for {get_test_date()}"
 
 
+@pytest.mark.slow
 class TestExportToCsv:
-    """Tests for export_to_csv function."""
+    """Tests for export_to_csv function (live network)."""
 
     def test_export_creates_file(self, tmp_path):
         """Should create a CSV file."""
@@ -111,6 +109,5 @@ class TestExportToCsv:
         path = tmp_path / "test.csv"
         export_to_csv(df, str(path))
 
-        # Read it back
         df_read = pd.read_csv(path)
         assert len(df_read) == len(df)

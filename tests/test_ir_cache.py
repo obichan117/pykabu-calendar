@@ -3,10 +3,8 @@
 import json
 import pytest
 from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import patch
 
-from pykabu_calendar.ir import (
+from pykabu_calendar.earnings.ir import (
     CacheEntry,
     IRCache,
     IRPageType,
@@ -175,48 +173,6 @@ class TestIRCache:
         assert temp_cache.get("7203") is None
         assert temp_cache.get("6758") is None
 
-    def test_clear_expired(self, temp_cache):
-        """Test clearing expired entries."""
-        # Add fresh entry
-        temp_cache.set("7203", "https://a.com/ir/", IRPageType.LANDING)
-
-        # Add expired entry by manipulating the cache directly
-        old_date = datetime.now() - timedelta(days=get_settings().cache_ttl_days + 1)
-        temp_cache._cache["6758"] = CacheEntry(
-            ir_url="https://b.com/ir/",
-            ir_type="landing",
-            last_updated=old_date.isoformat(),
-        )
-
-        count = temp_cache.clear_expired()
-        assert count == 1
-        assert temp_cache.get("7203") is not None
-        assert temp_cache.get("6758") is None
-
-    def test_list_all(self, temp_cache):
-        """Test listing all entries."""
-        temp_cache.set("7203", "https://a.com/ir/", IRPageType.LANDING)
-        temp_cache.set("6758", "https://b.com/ir/", IRPageType.CALENDAR)
-
-        entries = temp_cache.list_all()
-        assert len(entries) == 2
-        assert "7203" in entries
-        assert "6758" in entries
-
-    def test_stats(self, temp_cache):
-        """Test getting cache statistics."""
-        temp_cache.set("7203", "https://a.com/ir/", IRPageType.LANDING)
-        temp_cache.set("6758", "https://b.com/ir/", IRPageType.CALENDAR, discovered_via="llm")
-
-        stats = temp_cache.stats()
-        assert stats["total"] == 2
-        assert stats["valid"] == 2
-        assert stats["expired"] == 0
-        assert stats["by_type"]["landing"] == 1
-        assert stats["by_type"]["calendar"] == 1
-        assert stats["by_discovery_method"]["pattern"] == 1
-        assert stats["by_discovery_method"]["llm"] == 1
-
     def test_persistence(self, tmp_path):
         """Test that cache persists across instances."""
         # Create and populate cache
@@ -271,7 +227,7 @@ class TestConvenienceFunctions:
     def temp_cache_dir(self, tmp_path):
         """Set up temporary cache directory."""
         # Reset global cache
-        import pykabu_calendar.ir.cache as cache_module
+        import pykabu_calendar.earnings.ir.cache as cache_module
         cache_module._global_cache = None
         return tmp_path
 
@@ -284,7 +240,7 @@ class TestConvenienceFunctions:
     def test_save_and_get_cached(self, temp_cache_dir):
         """Test save_cache and get_cached functions."""
         # Reset global cache
-        import pykabu_calendar.ir.cache as cache_module
+        import pykabu_calendar.earnings.ir.cache as cache_module
         cache_module._global_cache = None
 
         entry = save_cache(

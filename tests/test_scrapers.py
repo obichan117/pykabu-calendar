@@ -1,17 +1,18 @@
 """
 Tests for individual scrapers.
 
-All tests use live data - no mocks.
-Uses dynamic dates to ensure tests work regardless of when they're run.
+Unit tests (no network) for URL building and config.
+Integration tests (live data, marked slow) for actual fetching.
 """
 
 import pandas as pd
+import pytest
 
-from pykabu_calendar.sources import get_matsui, get_tradersweb, get_sbi
-from pykabu_calendar.config import HEADERS, USER_AGENT
-from pykabu_calendar.sources.matsui.config import build_url as build_matsui_url
-from pykabu_calendar.sources.tradersweb.config import build_url as build_tradersweb_url
-from pykabu_calendar.sources.sbi.config import build_url as build_sbi_url
+from pykabu_calendar.earnings.sources import MatsuiEarningsSource, TraderswebEarningsSource, SBIEarningsSource
+from pykabu_calendar.config import get_settings
+from pykabu_calendar.earnings.sources.matsui import build_url as build_matsui_url
+from pykabu_calendar.earnings.sources.tradersweb import build_url as build_tradersweb_url
+from pykabu_calendar.earnings.sources.sbi import build_url as build_sbi_url
 
 import sys
 import os
@@ -20,17 +21,19 @@ from conftest import get_test_date
 
 
 class TestConfig:
-    """Tests for scraper configuration."""
+    """Tests for scraper configuration (no network)."""
 
     def test_user_agent_is_modern(self):
         """User-Agent should be modern Chrome."""
-        assert "Chrome/131" in USER_AGENT
-        assert "Windows NT 10.0" in USER_AGENT
+        settings = get_settings()
+        assert "Chrome/131" in settings.user_agent
+        assert "Windows NT 10.0" in settings.user_agent
 
     def test_headers_include_user_agent(self):
         """Headers should include User-Agent."""
-        assert "User-Agent" in HEADERS
-        assert HEADERS["User-Agent"] == USER_AGENT
+        settings = get_settings()
+        assert "User-Agent" in settings.headers
+        assert settings.headers["User-Agent"] == settings.user_agent
 
     def test_build_matsui_url(self):
         """Should build correct Matsui URL."""
@@ -51,60 +54,63 @@ class TestConfig:
         assert "202602" in url
 
 
+@pytest.mark.slow
 class TestMatsui:
-    """Tests for Matsui scraper."""
+    """Tests for Matsui scraper (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
 
     def test_code_is_string(self):
         """Code should be string type."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         if not df.empty:
             assert df["code"].dtype == object
 
     def test_returns_non_empty(self):
         """Should return non-empty DataFrame for valid date."""
-        df = get_matsui(get_test_date())
+        df = MatsuiEarningsSource().fetch(get_test_date())
         assert len(df) > 0, f"Expected earnings data for {get_test_date()}"
 
 
+@pytest.mark.slow
 class TestTradersweb:
-    """Tests for Tradersweb scraper."""
+    """Tests for Tradersweb scraper (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_tradersweb(get_test_date())
+        df = TraderswebEarningsSource().fetch(get_test_date())
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = get_tradersweb(get_test_date())
+        df = TraderswebEarningsSource().fetch(get_test_date())
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns
 
 
+@pytest.mark.slow
 class TestSbi:
-    """Tests for SBI scraper."""
+    """Tests for SBI scraper (live network)."""
 
     def test_returns_dataframe(self):
         """Should return a DataFrame."""
-        df = get_sbi(get_test_date())
+        df = SBIEarningsSource().fetch(get_test_date())
         assert isinstance(df, pd.DataFrame)
 
     def test_has_required_columns(self):
         """Should have code, name, datetime columns."""
-        df = get_sbi(get_test_date())
+        df = SBIEarningsSource().fetch(get_test_date())
         assert "code" in df.columns
         assert "name" in df.columns
         assert "datetime" in df.columns

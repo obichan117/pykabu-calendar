@@ -1,38 +1,50 @@
 """
 Generic fetch utilities.
 
-This module handles HTTP requests and browser automation.
+This module handles HTTP requests.
 It returns raw content (str, dict, bytes) - never DataFrames.
 """
 
 import logging
-from typing import Optional
+import threading
 
 import requests
 
-from ..config import HEADERS, TIMEOUT
+from ..config import get_settings, on_configure
 
 logger = logging.getLogger(__name__)
 
-_session: Optional[requests.Session] = None
+_thread_local = threading.local()
+_session_version = 0
+
+
+def _reset_sessions() -> None:
+    """Bump version so all threads create fresh sessions on next access."""
+    global _session_version
+    _session_version += 1
+
+
+on_configure(_reset_sessions)
 
 
 def get_session() -> requests.Session:
-    """Get a configured requests session (singleton)."""
-    global _session
-    if _session is None:
-        _session = requests.Session()
-        _session.headers.update(HEADERS)
-    return _session
+    """Get a configured requests session (one per thread)."""
+    local_ver = getattr(_thread_local, "version", -1)
+    if local_ver != _session_version:
+        session = requests.Session()
+        session.headers.update(get_settings().headers)
+        _thread_local.session = session
+        _thread_local.version = _session_version
+    return _thread_local.session
 
 
-def fetch(url: str, timeout: int = TIMEOUT, **kwargs) -> str:
+def fetch(url: str, timeout: int | None = None, **kwargs) -> str:
     """
     Fetch URL content using requests.
 
     Args:
         url: URL to fetch
-        timeout: Request timeout in seconds
+        timeout: Request timeout in seconds (default: from settings)
         **kwargs: Additional arguments passed to requests.get()
 
     Returns:
@@ -41,6 +53,8 @@ def fetch(url: str, timeout: int = TIMEOUT, **kwargs) -> str:
     Raises:
         requests.RequestException: If request fails
     """
+    if timeout is None:
+        timeout = get_settings().timeout
     logger.debug(f"Fetching {url}")
     session = get_session()
 
@@ -51,110 +65,18 @@ def fetch(url: str, timeout: int = TIMEOUT, **kwargs) -> str:
     return response.text
 
 
-def fetch_browser(url: str, wait_selector: str, timeout: int = TIMEOUT) -> str:
-    """
-    Fetch URL content using Playwright browser.
-
-    Use this for JavaScript-rendered pages.
+def fetch_safe(url: str, timeout: int | None = None) -> str | None:
+    """Fetch URL content, returning None on failure instead of raising.
 
     Args:
         url: URL to fetch
-        wait_selector: CSS selector to wait for before extracting HTML
-        timeout: Navigation timeout in seconds
+        timeout: Request timeout in seconds (default: from settings)
 
     Returns:
-        HTML content as string
-
-    Raises:
-        ImportError: If Playwright is not installed
-        Exception: If browser automation fails
+        HTML content as string, or None if request failed
     """
     try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        raise ImportError(
-            "Playwright not installed. Run: pip install playwright && playwright install chromium"
-        )
-
-    logger.debug(f"Fetching {url} with browser")
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-
-        page.goto(url, timeout=timeout * 1000)
-        page.wait_for_selector(wait_selector, timeout=10000)
-
-        html = page.content()
-        browser.close()
-
-    return html
-
-
-def fetch_browser_with_pagination(
-    url: str,
-    table_selector: str,
-    next_button_text: Optional[str] = None,
-    view_all_text: Optional[str] = None,
-    timeout: int = TIMEOUT,
-) -> list[str]:
-    """
-    Fetch paginated content using Playwright browser.
-
-    Args:
-        url: URL to fetch
-        table_selector: CSS selector for the data table
-        next_button_text: Text of "next page" button (optional)
-        view_all_text: Text of "view all" button to click first (optional)
-        timeout: Navigation timeout in seconds
-
-    Returns:
-        List of HTML strings (one per page)
-    """
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        raise ImportError(
-            "Playwright not installed. Run: pip install playwright && playwright install chromium"
-        )
-
-    logger.debug(f"Fetching {url} with browser (paginated)")
-    pages = []
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-
-        page.goto(url, timeout=timeout * 1000)
-        page.wait_for_selector(table_selector, timeout=10000)
-
-        # Click "view all" if provided
-        if view_all_text:
-            try:
-                page.click(f"text={view_all_text}", timeout=5000)
-                page.wait_for_timeout(1000)
-            except Exception:
-                pass  # Button may not exist
-
-        # Paginate
-        while True:
-            table = page.query_selector(table_selector)
-            if table:
-                pages.append(f"<table>{table.inner_html()}</table>")
-
-            if not next_button_text:
-                break
-
-            try:
-                next_btn = page.query_selector(f"text={next_button_text}")
-                if next_btn:
-                    next_btn.click()
-                    page.wait_for_timeout(1000)
-                else:
-                    break
-            except Exception:
-                break
-
-        browser.close()
-
-    return pages
+        return fetch(url, timeout=timeout)
+    except requests.RequestException as e:
+        logger.debug(f"Failed to fetch {url}: {e}")
+        return None

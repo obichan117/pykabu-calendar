@@ -8,13 +8,13 @@ Uses dynamic dates to ensure tests work regardless of when they're run.
 import pytest
 from datetime import datetime, timedelta
 
-from pykabu_calendar.sources import get_matsui
+from pykabu_calendar.earnings.sources import MatsuiEarningsSource
 
 
 def pytest_configure(config):
     """Add custom markers."""
     config.addinivalue_line(
-        "markers", "slow: marks tests as slow (require browser automation)"
+        "markers", "slow: marks tests as slow (heavy network I/O: IR discovery, inference)"
     )
 
 
@@ -36,25 +36,31 @@ def pytest_addoption(parser):
     )
 
 
-def find_date_with_earnings(max_days=30):
+def find_date_with_earnings(max_days=30, min_entries=5):
     """
-    Find a future date with earnings data for testing.
+    Find a future weekday with earnings data for testing.
 
-    Searches up to max_days ahead to find a date with >10 earnings.
-    Falls back to 14 days from now if nothing found.
+    Searches up to max_days ahead (weekdays only) to find a date
+    with >= min_entries earnings. Falls back to next weekday if nothing found.
     """
+    matsui = MatsuiEarningsSource()
     today = datetime.now()
     for i in range(1, max_days + 1):
         target = today + timedelta(days=i)
+        if target.weekday() >= 5:  # Skip weekends
+            continue
         date_str = target.strftime("%Y-%m-%d")
         try:
-            df = get_matsui(date_str)
-            if len(df) > 10:
+            df = matsui.fetch(date_str)
+            if len(df) >= min_entries:
                 return date_str
         except Exception:
             continue
-    # Fallback
-    return (today + timedelta(days=14)).strftime("%Y-%m-%d")
+    # Fallback: next weekday
+    target = today + timedelta(days=1)
+    while target.weekday() >= 5:
+        target += timedelta(days=1)
+    return target.strftime("%Y-%m-%d")
 
 
 # Cache at module level for efficiency
