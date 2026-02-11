@@ -24,28 +24,36 @@ uv run mkdocs gh-deploy --force
 uv build && uv run twine upload dist/* -u __token__ -p $PYPI_TOKEN
 ```
 
-## Architecture (v0.6.0)
+## Architecture (v0.7.0)
 
 ```
 src/pykabu_calendar/
 ├── config.py              # Settings dataclass, configure(), get_settings()
 ├── core/
-│   ├── fetch.py           # Generic fetch (requests, browser)
-│   └── parse.py           # Generic parse (tables, regex, datetime)
-├── sources/
-│   ├── matsui/            # Matsui Securities
-│   ├── tradersweb/        # Tradersweb
-│   └── sbi/               # SBI Securities (JSONP API, no browser needed)
-├── ir/                    # Company IR page discovery
-│   ├── discovery.py       # Find IR pages from company website
-│   ├── parser.py          # Rule-based datetime extraction + LLM fallback
-│   ├── patterns.py        # Common IR URL/HTML patterns
-│   └── cache.py           # Cache discovered patterns (JSON)
+│   ├── fetch.py           # Generic fetch (requests, thread-safe sessions)
+│   ├── parse.py           # Generic parse (tables, regex, datetime)
+│   ├── parallel.py        # ThreadPoolExecutor-based parallel runner
+│   └── io.py              # Export: CSV, Parquet, SQLite; Import: SQLite
+├── earnings/              # Event-type module
+│   ├── base.py            # EarningsSource ABC + YAML config loader
+│   ├── calendar.py        # Aggregator: get_calendar(), check_sources()
+│   ├── inference.py       # Historical inference via pykabutan
+│   ├── sources/
+│   │   ├── sbi.py + sbi.yaml         # SBI Securities (JSONP API)
+│   │   ├── matsui.py + matsui.yaml   # Matsui Securities
+│   │   └── tradersweb.py + tradersweb.yaml  # Tradersweb
+│   └── ir/                # Company IR page discovery
+│       ├── discovery.py   # Find IR pages from company website
+│       ├── parser.py      # Rule-based datetime extraction + LLM fallback
+│       ├── patterns.py    # Common IR URL/HTML patterns
+│       └── cache.py       # Cache discovered patterns (JSON)
 ├── llm/                   # LLM-assisted parsing
 │   ├── base.py            # Abstract LLM interface + get_default_client()
 │   └── gemini.py          # Google Gemini free tier client
-├── calendar.py            # Aggregator: get_calendar(), export_to_csv()
-└── inference.py           # Historical inference via pykabutan
+├── calendar.py            # Backward-compat shim → earnings.calendar
+├── inference.py           # Backward-compat shim → earnings.inference
+├── sources/               # Backward-compat shim → earnings.sources
+└── ir/                    # Backward-compat shim → earnings.ir
 ```
 
 ## Data Source Priority
@@ -53,7 +61,7 @@ src/pykabu_calendar/
 ```
 1. ir_datetime      # Company IR page (most accurate, exact times)
 2. inferred         # Historical patterns via pykabutan
-3. sbi              # SBI Securities calendar
+3. sbi              # SBI Securities calendar (JSONP API, no browser)
 4. matsui           # Matsui Securities calendar
 5. tradersweb       # Tradersweb calendar
 ```
@@ -83,14 +91,17 @@ Cache successful patterns for reuse
 | File | Purpose |
 |------|---------|
 | `config.py` | `Settings` dataclass, `configure()`, `get_settings()`, backward-compat constants |
-| `calendar.py` | Main aggregator, merges sources, IR integration, candidate ranking |
-| `inference.py` | Uses pykabutan for historical earnings patterns |
-| `core/fetch.py` | `fetch()`, `fetch_browser()`, `fetch_browser_with_pagination()` |
+| `earnings/calendar.py` | Main aggregator, parallel fetching, IR integration, candidate ranking |
+| `earnings/base.py` | `EarningsSource` ABC, `load_config()`, validation, health check |
+| `earnings/inference.py` | Uses pykabutan for historical earnings patterns |
+| `earnings/sources/*.yaml` | URLs, selectors, health check config — update here when sites change |
+| `earnings/ir/discovery.py` | Find company IR pages (pattern → homepage → LLM) |
+| `earnings/ir/parser.py` | Parse earnings datetime from IR pages (rule-based → LLM) |
+| `earnings/ir/cache.py` | JSON cache at `~/.pykabu_calendar/ir_cache.json` |
+| `core/fetch.py` | Thread-safe `get_session()`, `fetch()`, `fetch_browser()` |
+| `core/parallel.py` | `run_parallel()` — ThreadPoolExecutor wrapper |
+| `core/io.py` | `export_to_csv()`, `export_to_parquet()`, `export_to_sqlite()`, `load_from_sqlite()` |
 | `core/parse.py` | `parse_table()`, `extract_regex()`, `to_datetime()`, `combine_datetime()` |
-| `sources/*/config.py` | URLs, selectors - update here when sites change |
-| `ir/discovery.py` | Find company IR pages (pattern → homepage → LLM) |
-| `ir/parser.py` | Parse earnings datetime from IR pages (rule-based → LLM) |
-| `ir/cache.py` | JSON cache at `~/.pykabu_calendar/ir_cache.json` |
 | `llm/base.py` | Abstract `LLMClient` + `get_default_client()` singleton |
 | `llm/gemini.py` | `GeminiClient` with rate limiting |
 
@@ -107,6 +118,9 @@ cal.get_settings()
 
 # Reset to defaults
 cal.configure()
+
+# Health check all sources
+cal.check_sources()
 ```
 
 ## Output Schema
@@ -122,16 +136,22 @@ df = cal.get_calendar("2026-02-10", include_ir=False)
 
 # Force IR re-discovery (bypass cache)
 df = cal.get_calendar("2026-02-10", ir_eager=True)
+
+# Export to different formats
+cal.export_to_csv(df, "earnings.csv")
+cal.export_to_parquet(df, "earnings.parquet")
+cal.export_to_sqlite(df, "earnings.db")
 ```
 
 ## Testing Notes
 
 - Tests use **dynamic dates** (finds future date with earnings)
 - Tradersweb blocks cloud IPs (Colab) - handled gracefully
-- SBI now uses JSONP API (fast, no browser needed)
-- `@pytest.mark.slow` reserved for future browser-based tests
+- SBI uses JSONP API (fast, no browser needed)
+- `@pytest.mark.slow` reserved for network-dependent integration tests
 - IR/LLM unit tests use mocks (fast, no network)
 - Calendar tests pass `include_ir=False` for speed
+- Parquet tests skip if `pyarrow` not installed
 
 ## Related Projects
 

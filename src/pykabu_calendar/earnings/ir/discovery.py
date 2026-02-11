@@ -9,9 +9,9 @@ import requests
 from bs4 import BeautifulSoup
 from pykabutan import Ticker
 
-from ..config import HEADERS, TIMEOUT
-from ..core.fetch import fetch
-from ..llm import LLMClient, get_default_client
+from ...config import HEADERS, TIMEOUT
+from ...core.fetch import fetch
+from ...llm import LLMClient, get_default_client
 from .patterns import get_candidate_urls, extract_ir_keywords
 
 logger = logging.getLogger(__name__)

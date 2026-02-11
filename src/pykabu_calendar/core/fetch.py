@@ -6,6 +6,7 @@ It returns raw content (str, dict, bytes) - never DataFrames.
 """
 
 import logging
+import threading
 from typing import Optional
 
 import requests
@@ -14,16 +15,17 @@ from ..config import HEADERS, TIMEOUT
 
 logger = logging.getLogger(__name__)
 
-_session: Optional[requests.Session] = None
+_thread_local = threading.local()
 
 
 def get_session() -> requests.Session:
-    """Get a configured requests session (singleton)."""
-    global _session
-    if _session is None:
-        _session = requests.Session()
-        _session.headers.update(HEADERS)
-    return _session
+    """Get a configured requests session (one per thread)."""
+    session = getattr(_thread_local, "session", None)
+    if session is None:
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        _thread_local.session = session
+    return session
 
 
 def fetch(url: str, timeout: int = TIMEOUT, **kwargs) -> str:

@@ -4,29 +4,22 @@ pykabu-calendar aggregates earnings calendar data from multiple sources, each wi
 
 ## Available Sources
 
-| Source | Browser Required | Speed | Notes |
-|--------|-----------------|-------|-------|
-| `sbi` | Yes (Playwright) | Slower | Most comprehensive, default |
-| `matsui` | No | Fast | Lightweight, default |
-| `tradersweb` | No | Fast | Lightweight, default |
+| Source | Speed | Notes |
+|--------|-------|-------|
+| `sbi` | Fast | JSONP API, most comprehensive |
+| `matsui` | Fast | HTML scraping, lightweight |
+| `tradersweb` | Fast | HTML scraping, lightweight |
+
+All sources are lightweight HTTP-based scrapers. No browser automation is required.
 
 ## SBI Securities
 
-The SBI calendar is the most comprehensive public source for Japanese earnings dates.
-
-**URL**: `https://www.sbisec.co.jp/...`
+SBI uses a JSONP API endpoint for earnings calendar data.
 
 **Data provided**:
 
 - Announcement date and time
 - Company code and name
-
-**Requires**: Playwright browser automation
-
-```bash
-pip install playwright
-playwright install chromium
-```
 
 ```python
 # SBI is included by default
@@ -38,9 +31,7 @@ df = cal.get_calendar("2026-02-10", sources=["sbi"])
 
 ## Matsui Securities
 
-Lightweight source that doesn't require browser automation.
-
-**URL**: `https://finance.matsui.co.jp/...`
+HTML-based scraper with pagination support.
 
 **Data provided**:
 
@@ -57,9 +48,7 @@ df = cal.get_matsui("2026-02-10")
 
 ## Tradersweb
 
-Independent source that can catch discrepancies with Matsui.
-
-**URL**: `https://www.traders.co.jp/...`
+Single-page HTML scraper.
 
 **Data provided**:
 
@@ -98,14 +87,88 @@ df = cal.get_calendar("2026-02-10", infer_from_history=True)
 past = cal.get_past_earnings("7203")  # Toyota
 ```
 
+## Company IR Pages
+
+The library can discover and scrape company IR pages for exact announcement times.
+
+```python
+# Include IR page data (slower, more accurate)
+df = cal.get_calendar("2026-02-10", include_ir=True)
+
+# Force re-discovery (bypass cache)
+df = cal.get_calendar("2026-02-10", include_ir=True, ir_eager=True)
+```
+
 ## Datetime Selection Priority
 
 When multiple sources provide different times:
 
-1. **Inferred + Source match** - When inferred time matches a source (high confidence)
-2. **Inferred** - From historical patterns
-3. **SBI** - Primary public source
-4. **Matsui** - Lightweight source
-5. **Tradersweb** - Lightweight source
+1. **Company IR page** - Official source, most accurate
+2. **Inferred + Source match** - When inferred time matches a source (high confidence)
+3. **Inferred** - From historical patterns
+4. **SBI** - Primary public source
+5. **Matsui** - Lightweight source
+6. **Tradersweb** - Lightweight source
 
 The `candidate_datetimes` column contains all possible times, ordered by confidence.
+
+## Health Checks
+
+Verify that all sources are working:
+
+```python
+results = cal.check_sources()
+for r in results:
+    status = "OK" if r["ok"] else "FAIL"
+    print(f"  {r['name']}: {status} ({r['rows']} rows)")
+```
+
+## Source Architecture
+
+Each source is implemented as a subclass of `EarningsSource` ABC with an adjacent YAML config file:
+
+```
+earnings/sources/
+├── sbi.py + sbi.yaml
+├── matsui.py + matsui.yaml
+└── tradersweb.py + tradersweb.yaml
+```
+
+The YAML config contains URLs, selectors, and health check parameters. The Python file contains the scraping logic.
+
+## Adding a Custom Source
+
+1. Create `mysource.py` and `mysource.yaml` in `earnings/sources/`
+2. Subclass `EarningsSource`:
+
+```python
+from pykabu_calendar.earnings.base import EarningsSource, load_config
+
+class MyEarningsSource(EarningsSource):
+    def __init__(self):
+        self._config = load_config(__file__)
+
+    @property
+    def name(self) -> str:
+        return "mysource"
+
+    def _fetch(self, date: str) -> pd.DataFrame:
+        cfg = self._config
+        # Your scraping logic using cfg values
+        return pd.DataFrame({
+            "code": ["7203"],
+            "name": ["Toyota"],
+            "datetime": ["2026-02-10 15:00"],
+        })
+```
+
+3. Create `mysource.yaml`:
+
+```yaml
+url: "https://example.com/api/earnings"
+health_check:
+  test_date: "2026-02-10"
+  min_rows: 1
+```
+
+4. Register in `earnings/sources/__init__.py` and `earnings/__init__.py`

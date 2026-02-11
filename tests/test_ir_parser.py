@@ -4,13 +4,13 @@ import pytest
 from datetime import datetime, time
 from unittest.mock import Mock, patch
 
-from pykabu_calendar.ir import (
+from pykabu_calendar.earnings.ir import (
     EarningsInfo,
     ParseConfidence,
     parse_earnings_datetime,
     parse_earnings_from_html,
 )
-from pykabu_calendar.ir.parser import (
+from pykabu_calendar.earnings.ir.parser import (
     _parse_japanese_date,
     _parse_japanese_time,
     _has_undetermined_marker,
@@ -279,7 +279,7 @@ class TestParseEarningsFromHtml:
 class TestParseEarningsDatetime:
     """Tests for parse_earnings_datetime function."""
 
-    @patch("pykabu_calendar.ir.parser._fetch_html")
+    @patch("pykabu_calendar.earnings.ir.parser._fetch_html")
     def test_parses_from_url(self, mock_fetch):
         """Test parsing from URL."""
         mock_fetch.return_value = """
@@ -294,7 +294,7 @@ class TestParseEarningsDatetime:
         assert result is not None
         assert result.datetime == datetime(2025, 2, 14, 15, 0)
 
-    @patch("pykabu_calendar.ir.parser._fetch_html")
+    @patch("pykabu_calendar.earnings.ir.parser._fetch_html")
     def test_handles_fetch_failure(self, mock_fetch):
         """Test handling fetch failure."""
         mock_fetch.return_value = None
@@ -308,8 +308,6 @@ class TestParseEarningsDatetime:
 @pytest.mark.slow
 class TestParseEarningsIntegration:
     """Integration tests for parsing real IR pages."""
-
-    # These tests require network access and may be slow
 
     def test_various_date_formats(self):
         """Test parsing various Japanese date formats."""

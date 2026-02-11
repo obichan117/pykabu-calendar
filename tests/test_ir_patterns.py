@@ -3,8 +3,8 @@
 import pytest
 import requests
 
-from pykabu_calendar.ir import get_candidate_urls, IR_PATH_PATTERNS, CALENDAR_PATH_PATTERNS
-from pykabu_calendar.ir.patterns import normalize_base_url, is_known_ir_platform
+from pykabu_calendar.earnings.ir import get_candidate_urls, IR_PATH_PATTERNS, CALENDAR_PATH_PATTERNS
+from pykabu_calendar.earnings.ir.patterns import normalize_base_url, is_known_ir_platform
 
 
 class TestNormalizeBaseUrl:

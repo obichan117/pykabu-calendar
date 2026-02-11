@@ -16,35 +16,19 @@ uv pip install pykabu-calendar
 
 ### LLM Support
 
-For IR page discovery using local LLMs:
+For IR page discovery using Google Gemini:
 
 ```bash
 pip install pykabu-calendar[llm]
 ```
 
-This installs Ollama client. You'll also need Ollama running locally:
+### Parquet Export
+
+For Parquet file export:
 
 ```bash
-# Install Ollama (macOS)
-brew install ollama
-
-# Pull a model
-ollama pull llama3.2
-
-# Start Ollama server
-ollama serve
+pip install pyarrow
 ```
-
-### Browser Support
-
-If some calendar sites require JavaScript rendering:
-
-```bash
-pip install pykabu-calendar[browser]
-```
-
-!!! note
-    Browser dependencies are only added if needed. The library tries lightweight approaches first.
 
 ### Development
 

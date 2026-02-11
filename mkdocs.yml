@@ -56,4 +56,5 @@ nav:
       - Data Sources: guide/sources.md
       - Official IR Verification: guide/official-ir.md
       - Configuration: guide/configuration.md
+      - Adding Custom Sources: guide/custom-sources.md
   - API Reference: api.md

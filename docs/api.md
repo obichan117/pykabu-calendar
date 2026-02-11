@@ -9,6 +9,8 @@ def get_calendar(
     date: str,
     sources: list[str] | None = None,
     infer_from_history: bool = True,
+    include_ir: bool = False,
+    ir_eager: bool = False,
 ) -> pd.DataFrame:
     """
     Get aggregated earnings calendar for a target date.
@@ -16,11 +18,27 @@ def get_calendar(
     Args:
         date: Date in YYYY-MM-DD format
         sources: List of sources to use. Default: all sources (sbi, matsui, tradersweb).
-                 Note: SBI requires Playwright and may be slower than other sources.
         infer_from_history: Whether to infer time from historical patterns
+        include_ir: Whether to enrich with company IR page data
+        ir_eager: Force IR re-discovery (bypass cache)
 
     Returns:
         DataFrame with earnings calendar data
+    """
+```
+
+### check_sources
+
+```python
+def check_sources() -> list[dict]:
+    """
+    Health check all registered earnings sources.
+
+    Each source uses its YAML config's health_check section
+    (test_date and min_rows) to validate.
+
+    Returns:
+        List of dicts with keys: name, ok, rows, error
     """
 ```
 
@@ -31,10 +49,103 @@ def export_to_csv(df: pd.DataFrame, path: str) -> None:
     """
     Export calendar to CSV with proper encoding for Excel/Google Sheets.
 
+    List columns are serialized as semicolon-separated strings.
+    Uses utf-8-sig encoding.
+
     Args:
         df: Calendar DataFrame
         path: Output file path
     """
+```
+
+### export_to_parquet
+
+```python
+def export_to_parquet(df: pd.DataFrame, path: str) -> None:
+    """
+    Export calendar to Parquet format.
+
+    Requires pyarrow or fastparquet.
+
+    Args:
+        df: Calendar DataFrame
+        path: Output file path
+    """
+```
+
+### export_to_sqlite
+
+```python
+def export_to_sqlite(
+    df: pd.DataFrame,
+    path: str,
+    table: str = "earnings",
+) -> None:
+    """
+    Export calendar to SQLite database.
+
+    Args:
+        df: Calendar DataFrame
+        path: Database file path
+        table: Table name (default: "earnings")
+    """
+```
+
+### load_from_sqlite
+
+```python
+def load_from_sqlite(
+    path: str,
+    table: str = "earnings",
+    date: str | None = None,
+) -> pd.DataFrame:
+    """
+    Load calendar from SQLite database.
+
+    Args:
+        path: Database file path
+        table: Table name (default: "earnings")
+        date: Optional date filter (YYYY-MM-DD)
+
+    Returns:
+        Calendar DataFrame
+    """
+```
+
+## EarningsSource ABC
+
+```python
+class EarningsSource(ABC):
+    """
+    Abstract base class for earnings calendar sources.
+
+    Subclass this to add a custom source.
+
+    Properties:
+        name: Short lowercase identifier (e.g., "sbi")
+
+    Methods:
+        fetch(date): Fetch and validate earnings data
+        check(): Health check using YAML config
+    """
+```
+
+### Adding a Custom Source
+
+```python
+from pykabu_calendar.earnings.base import EarningsSource, load_config
+
+class MySource(EarningsSource):
+    def __init__(self):
+        self._config = load_config(__file__)
+
+    @property
+    def name(self) -> str:
+        return "mysource"
+
+    def _fetch(self, date: str) -> pd.DataFrame:
+        # Your scraping logic here
+        return pd.DataFrame({"code": [...], "name": [...], "datetime": [...]})
 ```
 
 ## Individual Scrapers
@@ -74,9 +185,7 @@ def get_tradersweb(date: str) -> pd.DataFrame:
 ```python
 def get_sbi(date: str) -> pd.DataFrame:
     """
-    Get earnings calendar from SBI Securities.
-
-    Requires Playwright: pip install playwright && playwright install chromium
+    Get earnings calendar from SBI Securities via JSONP API.
 
     Args:
         date: Target date in YYYY-MM-DD format
@@ -155,6 +264,7 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
 | `name` | str | Company name in Japanese |
 | `datetime` | datetime | Best estimate announcement datetime |
 | `candidate_datetimes` | list | List of candidate datetimes (most likely first) |
+| `ir_datetime` | datetime | Datetime from company IR page |
 | `sbi_datetime` | datetime | Datetime from SBI (if available) |
 | `matsui_datetime` | datetime | Datetime from Matsui |
 | `tradersweb_datetime` | datetime | Datetime from Tradersweb |
@@ -163,8 +273,9 @@ def is_during_trading_hours(dt: pd.Timestamp) -> bool:
 
 ## Datetime Selection Priority
 
-1. **Inferred + Source match** - When inferred time matches a source (high confidence)
-2. **Inferred** - From historical patterns
-3. **SBI** - Primary public source (requires Playwright)
-4. **Matsui** - Lightweight source
-5. **Tradersweb** - Lightweight source
+1. **Company IR page** - Official IR page (most accurate)
+2. **Inferred + Source match** - When inferred time matches a source (high confidence)
+3. **Inferred** - From historical patterns
+4. **SBI** - JSONP API source
+5. **Matsui** - Lightweight source
+6. **Tradersweb** - Lightweight source

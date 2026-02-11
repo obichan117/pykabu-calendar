@@ -6,7 +6,7 @@ Japanese earnings calendar aggregator.
 
 ## Overview
 
-**pykabu-calendar** aggregates earnings announcement data from multiple Japanese broker sites and produces the most accurate earnings datetime calendar possible.
+**pykabu-calendar** aggregates earnings announcement data from multiple Japanese broker sites, company IR pages, and historical patterns to produce the most accurate earnings datetime calendar possible.
 
 ### Why accurate datetime matters
 
@@ -18,10 +18,10 @@ Some companies announce earnings during trading hours (zaraba: 9:00-11:30, 12:30
 
 ### Data source hierarchy
 
-1. **Inferred + Source match** - When historical pattern matches a source (high confidence)
+1. **Company IR page** - Official IR page with exact announcement time (highest accuracy)
 2. **Historical patterns** - Inferred from past announcement times via pykabutan
-3. **SBI Securities** - Primary public source (requires Playwright)
-4. **Matsui/Tradersweb** - Lightweight sources (default)
+3. **SBI Securities** - JSONP API calendar
+4. **Matsui/Tradersweb** - Lightweight HTML sources
 
 ## Quick Example
 
@@ -31,14 +31,21 @@ import pykabu_calendar as cal
 # Get earnings calendar (uses all sources by default)
 df = cal.get_calendar("2026-02-10")
 
-# Use specific sources only (faster, no browser needed)
+# Use specific sources only
 df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
-# Without historical inference (faster)
-df = cal.get_calendar("2026-02-10", infer_from_history=False)
+# Include company IR pages for exact times
+df = cal.get_calendar("2026-02-10", include_ir=True)
 
 # Export to CSV for Google Sheets
 cal.export_to_csv(df, "earnings.csv")
+
+# Export to Parquet or SQLite
+cal.export_to_parquet(df, "earnings.parquet")
+cal.export_to_sqlite(df, "earnings.db")
+
+# Health check data sources
+cal.check_sources()
 ```
 
 ## Output Columns
@@ -49,6 +56,7 @@ cal.export_to_csv(df, "earnings.csv")
 | `name` | Company name |
 | `datetime` | Best estimate datetime |
 | `candidate_datetimes` | List of candidate datetimes (most likely first) |
+| `ir_datetime` | Datetime from company IR page |
 | `sbi_datetime` | Datetime from SBI (if available) |
 | `matsui_datetime` | Datetime from Matsui |
 | `tradersweb_datetime` | Datetime from Tradersweb |
@@ -58,20 +66,18 @@ cal.export_to_csv(df, "earnings.csv")
 ## Features
 
 - Aggregates earnings calendars from SBI, Matsui, Tradersweb
+- Discovers company IR pages and extracts exact announcement times
 - Infers announcement time from historical patterns (via pykabutan)
-- Centralized URL configuration for easy maintenance
-- Modern User-Agent for reliable scraping
-- Exports to CSV (Google Sheets compatible)
+- Parallel source fetching via `ThreadPoolExecutor`
+- Source health checks via `check_sources()`
+- YAML-based source configuration
+- Exports to CSV, Parquet, and SQLite
+- Extensible via `EarningsSource` ABC
 
 ## Installation
 
 ```bash
 pip install pykabu-calendar
-```
-
-For SBI scraping:
-```bash
-pip install playwright && playwright install chromium
 ```
 
 See [Installation](getting-started/installation.md) for more options.

@@ -1,17 +1,19 @@
-"""Backward-compat shim — imports from earnings.ir."""
+"""IR discovery module for finding company investor relations pages."""
 
-from ..earnings.ir import (  # noqa: F401
-    get_candidate_urls,
-    IR_PATH_PATTERNS,
-    CALENDAR_PATH_PATTERNS,
+from .patterns import get_candidate_urls, IR_PATH_PATTERNS, CALENDAR_PATH_PATTERNS
+from .discovery import (
     IRPageInfo,
     IRPageType,
     discover_ir_page,
     discover_ir_pages,
+)
+from .parser import (
     EarningsInfo,
     ParseConfidence,
     parse_earnings_datetime,
     parse_earnings_from_html,
+)
+from .cache import (
     CacheEntry,
     IRCache,
     get_cache,
@@ -20,17 +22,21 @@ from ..earnings.ir import (  # noqa: F401
 )
 
 __all__ = [
+    # Patterns
     "get_candidate_urls",
     "IR_PATH_PATTERNS",
     "CALENDAR_PATH_PATTERNS",
+    # Discovery
     "IRPageInfo",
     "IRPageType",
     "discover_ir_page",
     "discover_ir_pages",
+    # Parser
     "EarningsInfo",
     "ParseConfidence",
     "parse_earnings_datetime",
     "parse_earnings_from_html",
+    # Cache
     "CacheEntry",
     "IRCache",
     "get_cache",

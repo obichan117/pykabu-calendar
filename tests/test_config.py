@@ -90,7 +90,7 @@ class TestSettingsPropagation:
     def test_cache_settings_propagate(self):
         """IRCache should read cache_dir and ttl from settings."""
         configure(cache_dir="/tmp/test_cache", cache_ttl_days=7)
-        from pykabu_calendar.ir.cache import IRCache
+        from pykabu_calendar.earnings.ir.cache import IRCache
 
         cache = IRCache()
         assert str(cache.cache_dir) == "/tmp/test_cache"
@@ -98,9 +98,6 @@ class TestSettingsPropagation:
 
     def test_configure_resets_llm_singleton(self):
         """configure() should reset the LLM singleton."""
-        from pykabu_calendar.llm import _default_client, reset_default_client
-
-        # Set up a sentinel
         import pykabu_calendar.llm as llm_mod
 
         llm_mod._default_client = "sentinel"  # type: ignore[assignment]
@@ -109,7 +106,7 @@ class TestSettingsPropagation:
 
     def test_configure_resets_cache_singleton(self):
         """configure() should reset the cache singleton."""
-        import pykabu_calendar.ir.cache as cache_mod
+        import pykabu_calendar.earnings.ir.cache as cache_mod
 
         cache_mod._global_cache = "sentinel"  # type: ignore[assignment]
         configure(cache_ttl_days=1)

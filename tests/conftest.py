@@ -8,7 +8,7 @@ Uses dynamic dates to ensure tests work regardless of when they're run.
 import pytest
 from datetime import datetime, timedelta
 
-from pykabu_calendar.sources import get_matsui
+from pykabu_calendar.earnings.sources.matsui import get_matsui
 
 
 def pytest_configure(config):

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from ..config import get_settings, on_configure
+from ...config import get_settings, on_configure
 from .discovery import IRPageType
 
 logger = logging.getLogger(__name__)

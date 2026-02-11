@@ -7,11 +7,11 @@ Uses dynamic dates to ensure tests work regardless of when they're run.
 
 import pandas as pd
 
-from pykabu_calendar.sources import get_matsui, get_tradersweb, get_sbi
+from pykabu_calendar.earnings.sources import get_matsui, get_tradersweb, get_sbi
 from pykabu_calendar.config import HEADERS, USER_AGENT
-from pykabu_calendar.sources.matsui.config import build_url as build_matsui_url
-from pykabu_calendar.sources.tradersweb.config import build_url as build_tradersweb_url
-from pykabu_calendar.sources.sbi.config import build_url as build_sbi_url
+from pykabu_calendar.earnings.sources.matsui import build_url as build_matsui_url
+from pykabu_calendar.earnings.sources.tradersweb import build_url as build_tradersweb_url
+from pykabu_calendar.earnings.sources.sbi import build_url as build_sbi_url
 
 import sys
 import os

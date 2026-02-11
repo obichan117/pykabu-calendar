@@ -5,7 +5,6 @@ All tests use live data - no mocks.
 Uses dynamic dates to ensure tests work regardless of when they're run.
 """
 
-import pytest
 import pandas as pd
 
 from pykabu_calendar import get_calendar, export_to_csv

@@ -1,71 +1,97 @@
 # Configuration
 
-## Shared Configuration
+## Runtime Configuration
 
-The library uses centralized configuration in `pykabu_calendar/config.py`:
+Configure the library at runtime using `configure()`:
 
 ```python
-# User-Agent for HTTP requests
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/131.0.0.0 Safari/537.36"
+import pykabu_calendar as cal
+
+# Override settings
+cal.configure(
+    timeout=10,                       # HTTP timeout in seconds
+    llm_model="gemini-2.0-flash-lite", # LLM model for IR parsing
+    cache_ttl_days=7,                  # IR cache TTL
 )
 
-# Request timeout in seconds
-TIMEOUT = 30
+# Inspect current settings
+settings = cal.get_settings()
+print(settings.timeout)  # 10
 
-# HTTP headers used for all requests
-HEADERS = {
-    "User-Agent": USER_AGENT,
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
-}
+# Reset to defaults
+cal.configure()
 ```
 
-## Source-Specific Configuration
+## Settings Reference
 
-Each data source has its own configuration in `sources/{source}/config.py`:
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `timeout` | `30` | HTTP request timeout (seconds) |
+| `user_agent` | Chrome 131 | User-Agent header |
+| `llm_model` | `"gemini-2.0-flash"` | LLM model for IR parsing |
+| `llm_timeout` | `60.0` | LLM request timeout (seconds) |
+| `llm_provider` | `"gemini"` | LLM provider |
+| `cache_dir` | `"~/.pykabu_calendar"` | Cache directory |
+| `cache_ttl_days` | `30` | Cache TTL in days |
 
-### Matsui
+## Source-Specific Configuration (YAML)
 
-```python
-# sources/matsui/config.py
-URL = "https://finance.matsui.co.jp/find-by-schedule/index"
-TABLE_SELECTOR = "table.m-table"
-DATE_FORMAT = "%Y/%m/%d"
+Each data source has an adjacent YAML config file:
 
-def build_url(date: str, page: int = 1) -> str:
-    # Builds URL like: .../index?d=2026/2/10&kind=earnings&p=1
+### Matsui (`earnings/sources/matsui.yaml`)
+
+```yaml
+url: "https://finance.matsui.co.jp/find-by-schedule/index"
+table_selector: "table.m-table"
+date_format: "%Y/%m/%d"
+per_page: 100
+health_check:
+  test_date: "2026-02-10"
+  min_rows: 10
 ```
 
-### Tradersweb
+### Tradersweb (`earnings/sources/tradersweb.yaml`)
 
-```python
-# sources/tradersweb/config.py
-URL = "https://www.traders.co.jp/stocks/earnings/calendar"
-
-def build_url(date: str) -> str:
-    # Builds URL like: .../calendar/2026/02/10
+```yaml
+url: "https://www.traders.co.jp/stocks/earnings/calendar"
+table_selector: "table"
+date_format: "%Y/%m/%d"
+health_check:
+  test_date: "2026-02-10"
+  min_rows: 10
 ```
 
-### SBI
+### SBI (`earnings/sources/sbi.yaml`)
 
-```python
-# sources/sbi/config.py
-URL = "https://www.sbisec.co.jp/ETGate/..."
-
-def build_url(date: str) -> str:
-    # Builds URL for SBI calendar page
+```yaml
+page_url: "https://www.sbisec.co.jp/ETGate/..."
+api_endpoint: "https://www.sbisec.co.jp/ETGate/..."
+hash_pattern: "hashKey=(\\w+)"
+health_check:
+  test_date: "2026-02-10"
+  min_rows: 10
 ```
 
-## Modifying URLs
+## Modifying Source URLs
 
 If a data source changes their URL structure:
 
-1. Open `src/pykabu_calendar/sources/{source}/config.py`
-2. Update the `URL` constant and/or `build_url()` function
-3. Update any CSS selectors if the page structure changed
+1. Open `src/pykabu_calendar/earnings/sources/{source}.yaml`
+2. Update the URL and any selectors
+3. Run health check to verify: `cal.check_sources()`
+
+## Health Checks
+
+Verify all sources are operational:
+
+```python
+results = cal.check_sources()
+for r in results:
+    status = "OK" if r["ok"] else "FAIL"
+    print(f"  {r['name']}: {status} ({r['rows']} rows)")
+    if r["error"]:
+        print(f"    Error: {r['error']}")
+```
 
 ## Default Sources
 
@@ -73,26 +99,14 @@ If a data source changes their URL structure:
 import pykabu_calendar as cal
 
 # Default: uses all sources (sbi, matsui, tradersweb)
-# Note: SBI requires Playwright and may be slightly slower
 df = cal.get_calendar("2026-02-10")
 
-# Use only lightweight sources (no Playwright needed, faster)
+# Use only specific sources
 df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
-# Use specific sources only
-df = cal.get_calendar("2026-02-10", sources=["matsui"])
+# Include IR page enrichment
+df = cal.get_calendar("2026-02-10", include_ir=True)
 
 # Disable historical inference (faster)
 df = cal.get_calendar("2026-02-10", infer_from_history=False)
 ```
-
-## Installing Playwright for SBI
-
-SBI requires browser automation because the site uses JavaScript rendering:
-
-```bash
-pip install playwright
-playwright install chromium
-```
-
-SBI is included by default. To skip it, use `sources=["matsui", "tradersweb"]`.

@@ -25,20 +25,15 @@ Output:
 
 ## Selecting Sources
 
-By default, all sources are used (SBI, Matsui, Tradersweb). For faster results without browser automation:
+By default, all sources are used (SBI, Matsui, Tradersweb):
 
 ```python
-# Use only lightweight sources (no Playwright needed)
+# Use only specific sources
 df = cal.get_calendar("2026-02-10", sources=["matsui", "tradersweb"])
 
-# Use only SBI (requires Playwright)
+# Use only SBI
 df = cal.get_calendar("2026-02-10", sources=["sbi"])
-
-# Check SBI-specific datetime
-print(df[["code", "name", "datetime", "sbi_datetime"]])
 ```
-
-Note: SBI requires Playwright and may be slightly slower than other sources.
 
 ## Without Historical Inference
 
@@ -47,6 +42,18 @@ For faster results, disable historical inference:
 ```python
 # Faster, but less accurate
 df = cal.get_calendar("2026-02-10", infer_from_history=False)
+```
+
+## IR Page Enrichment
+
+For the most accurate times, enable company IR page discovery:
+
+```python
+# Include IR page data (slower, most accurate)
+df = cal.get_calendar("2026-02-10", include_ir=True)
+
+# Check IR-specific datetime
+print(df[["code", "name", "datetime", "ir_datetime"]])
 ```
 
 ## Viewing Past Datetimes
@@ -80,19 +87,34 @@ df = cal.get_calendar("2026-02-10")
 print(df[["code", "name", "candidate_datetimes"]].head())
 ```
 
-## Export to CSV
+## Export
 
 ```python
 df = cal.get_calendar("2026-02-10")
 
-# Use the built-in export function (handles list columns)
+# CSV (Excel/Google Sheets compatible)
 cal.export_to_csv(df, "earnings_2026-02-10.csv")
 
-# Or use pandas directly
-df.to_csv("earnings.csv", index=False, encoding="utf-8-sig")
+# Parquet (requires pyarrow)
+cal.export_to_parquet(df, "earnings.parquet")
+
+# SQLite
+cal.export_to_sqlite(df, "earnings.db")
+
+# Load back from SQLite
+df = cal.load_from_sqlite("earnings.db", date="2026-02-10")
 ```
 
-The `utf-8-sig` encoding ensures Excel and Google Sheets handle Japanese characters correctly.
+## Health Checks
+
+Verify data sources are working:
+
+```python
+results = cal.check_sources()
+for r in results:
+    status = "OK" if r["ok"] else "FAIL"
+    print(f"  {r['name']}: {status} ({r['rows']} rows)")
+```
 
 ## Output Columns
 
@@ -102,6 +124,7 @@ The `utf-8-sig` encoding ensures Excel and Google Sheets handle Japanese charact
 | `name` | Company name |
 | `datetime` | Best guess announcement datetime |
 | `candidate_datetimes` | List of candidate datetimes (most likely first) |
+| `ir_datetime` | Datetime from company IR page |
 | `sbi_datetime` | Datetime from SBI |
 | `matsui_datetime` | Datetime from Matsui |
 | `tradersweb_datetime` | Datetime from Tradersweb |
@@ -115,12 +138,12 @@ You can also use individual scrapers directly:
 ```python
 import pykabu_calendar as cal
 
-# Matsui (lightweight)
+# Matsui
 df_matsui = cal.get_matsui("2026-02-10")
 
-# Tradersweb (lightweight)
+# Tradersweb
 df_tradersweb = cal.get_tradersweb("2026-02-10")
 
-# SBI (requires Playwright)
+# SBI
 df_sbi = cal.get_sbi("2026-02-10")
 ```

@@ -1,7 +1,5 @@
-"""Earnings calendar data sources."""
+"""Backward-compat shim — imports from earnings.sources."""
 
-from .matsui.scraper import get_matsui
-from .tradersweb.scraper import get_tradersweb
-from .sbi.scraper import get_sbi
+from ..earnings.sources import get_matsui, get_sbi, get_tradersweb  # noqa: F401
 
 __all__ = ["get_matsui", "get_tradersweb", "get_sbi"]

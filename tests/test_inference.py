@@ -5,10 +5,9 @@ All tests use live data - no mocks.
 Uses dynamic dates to ensure tests work regardless of when they're run.
 """
 
-import pytest
 import pandas as pd
 
-from pykabu_calendar.inference import (
+from pykabu_calendar.earnings.inference import (
     get_past_earnings,
     infer_datetime,
     is_during_trading_hours,

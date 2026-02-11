@@ -3,10 +3,8 @@
 import json
 import pytest
 from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import patch
 
-from pykabu_calendar.ir import (
+from pykabu_calendar.earnings.ir import (
     CacheEntry,
     IRCache,
     IRPageType,
@@ -271,7 +269,7 @@ class TestConvenienceFunctions:
     def temp_cache_dir(self, tmp_path):
         """Set up temporary cache directory."""
         # Reset global cache
-        import pykabu_calendar.ir.cache as cache_module
+        import pykabu_calendar.earnings.ir.cache as cache_module
         cache_module._global_cache = None
         return tmp_path
 
@@ -284,7 +282,7 @@ class TestConvenienceFunctions:
     def test_save_and_get_cached(self, temp_cache_dir):
         """Test save_cache and get_cached functions."""
         # Reset global cache
-        import pykabu_calendar.ir.cache as cache_module
+        import pykabu_calendar.earnings.ir.cache as cache_module
         cache_module._global_cache = None
 
         entry = save_cache(

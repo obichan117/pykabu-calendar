@@ -1,0 +1,12 @@
+# Tradersweb configuration
+
+url: "https://www.traders.co.jp/market_jp/earnings_calendar"
+table_selector: "table.data_table"
+date_format: "%Y/%m/%d"
+name_column_pattern: "銘柄名"
+code_pattern: '\((\w+)/'
+name_pattern: '^([^(]+)'
+
+health_check:
+  test_date: "2026-02-10"
+  min_rows: 10

@@ -9,9 +9,9 @@ from enum import Enum
 import requests
 from bs4 import BeautifulSoup
 
-from ..config import TIMEOUT
-from ..core.fetch import fetch
-from ..llm import LLMClient, get_default_client
+from ...config import TIMEOUT
+from ...core.fetch import fetch
+from ...llm import LLMClient, get_default_client
 
 logger = logging.getLogger(__name__)
 
