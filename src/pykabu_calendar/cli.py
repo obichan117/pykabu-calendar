@@ -1,22 +1,11 @@
-"""Command-line interface for pykabu-calendar.
-
-Requires the ``cli`` extra: ``pip install pykabu-calendar[cli]``
-"""
+"""Command-line interface for pykabu-calendar."""
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-try:
-    import click
-except ImportError:
-    print(
-        "CLI dependencies not installed. "
-        "Install with: pip install pykabu-calendar[cli]",
-        file=sys.stderr,
-    )
-    sys.exit(1)
+import click
 
 import pykabu_calendar as cal
 
